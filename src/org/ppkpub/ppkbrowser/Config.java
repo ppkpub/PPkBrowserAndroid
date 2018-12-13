@@ -22,7 +22,7 @@ public class Config {
   
   //version
   public static Integer majorVersion = 0;
-  public static Integer minorVersion = 201;
+  public static Integer minorVersion = 202;
   public static String version = Integer.toString(majorVersion)+"."+Integer.toString(minorVersion);
   public static Integer majorVersionDB = 1;
   
@@ -93,6 +93,9 @@ public class Config {
   //IPFS
   public static String IPFS_API_ADDRESS="/ip4/127.0.0.1/tcp/5001"; //"https://ipfs.infura.io:5001"
   public static String IPFS_PROXY_URL="https://ipfs.infura.io/ipfs/";
+  
+  //Bytom File System
+  public static String BTMFS_PROXY_URL="http://45.32.19.146/btmfs/"; //Test service
   
   //Charset
   public static String PPK_TEXT_CHARSET="UTF-8";  //适用文本内容

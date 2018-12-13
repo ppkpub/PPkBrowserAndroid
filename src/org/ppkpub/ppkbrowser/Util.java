@@ -20,17 +20,16 @@ import javax.net.ssl.X509TrustManager;
 import org.json.JSONObject;
 
 import android.util.Base64;
+import android.util.Log;
 
 public class Util {
-	static TestLogger logger = new TestLogger(Util.class);
-
 	public static String getPage(String urlString) {
 	    return getPage(urlString, 1);
     }
 
     public static String getPage(String urlString, int retries) {
 	    try {
-	      logger.info("Getting URL: "+urlString);
+	      Log.d("Util","Getting URL: "+urlString);
 	      doTrustCertificates();
 	      URL url = new URL(urlString);
 	      HttpURLConnection connection = null;
@@ -54,7 +53,7 @@ public class Util {
 
 	      return sb.toString();
 	    } catch (Exception e) {
-	      logger.error("Fetch URL error: "+e.toString());
+	    	Log.d("Util","Fetch URL error: "+e.toString());
 	    }
 	    return "";
     }  
@@ -109,13 +108,15 @@ public class Util {
 	    try{
 	      String[] uri_chunks=uri.split(":");
 	      if(uri_chunks.length<2){
-	        logger.error("Util.fetchURI() meet invalid uri:"+uri);
+	        Log.d("Util","Util.fetchURI() meet invalid uri:"+uri);
 	        return null;
 	      }
 	      
 	      if(uri_chunks[0].equalsIgnoreCase("ipfs")){
 	        //return getIpfsData(uri_chunks[1]);
 	    	  return "ipfs not supported";
+	      }else if(uri_chunks[0].equalsIgnoreCase("btmfs")){
+	          return getBtmfsData(uri);
 	      }else if(uri_chunks[0].equalsIgnoreCase("ppk")){
 	        JSONObject obj_ap_resp=PPkURI.fetchPPkURI(uri);
 	        if(obj_ap_resp==null)
@@ -132,7 +133,7 @@ public class Util {
 	        return getPage(uri);
 	      }
 	    }catch(Exception e){
-	      logger.error("Util.fetchURI("+uri+") error:"+e.toString());
+	      Log.d("Util","Util.fetchURI("+uri+") error:"+e.toString());
 	    }
 	    return null;
     }
@@ -249,4 +250,35 @@ public class Util {
   private static byte charToByte(char c) {   
       return (byte) "0123456789ABCDEF".indexOf(c);   
   }  
+  
+  //Upload data to BtmFS and return the uri
+  public static String uploadToBtmfs(byte[] data){
+      String tmp_url=Config.BTMFS_PROXY_URL+"?hex=" + bytesToHexString( data );
+      System.out.println("Using BTMFS Proxy to upload :"+ tmp_url);
+      
+      try{
+        String str_resp_json=getPage(tmp_url);
+        System.out.println("str_resp_json ="+ str_resp_json);
+        
+        JSONObject obj_ap_resp=new JSONObject(str_resp_json);
+        if(obj_ap_resp==null)
+          return null;
+        
+        String resp_status=obj_ap_resp.optString("status",null);
+        if( "success".equalsIgnoreCase(resp_status) )
+            return obj_ap_resp.optString("uri",null);
+        else
+            return null;
+      }catch(Exception e){
+        Log.d("Util","Util.uploadToBtmfs() error:"+e.toString());
+        return null;
+      }
+  }
+  
+  public static String getBtmfsData(String btmfs_uri){
+      String tmp_url=Config.BTMFS_PROXY_URL+"?uri=" + java.net.URLEncoder.encode(btmfs_uri);
+      System.out.println("Using BTMFS Proxy to fetch:"+ tmp_url);
+      
+      return getPage(tmp_url);
+  }
 }

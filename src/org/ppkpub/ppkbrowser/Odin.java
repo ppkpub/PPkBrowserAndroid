@@ -20,7 +20,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class Odin {
-  static TestLogger logger = new TestLogger(Odin.class);
   static String[] LetterEscapeNumSet={"O","ILA","BCZ","DEF","GH","JKS","MN","PQR","TUV","WXY"};
   
   //public static HashMap<String , String> teamMap = null;

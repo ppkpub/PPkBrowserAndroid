@@ -15,11 +15,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
+import android.util.Log;
+
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 
 public class APoverETH {
-  static TestLogger logger = new TestLogger(APoverETH.class);
-
   public static String fetchInterest(String ap_url, String interest) {
     try {
         //just for demo
@@ -29,7 +29,7 @@ public class APoverETH {
 
     }
     String str_ap_resp_json=null;
-    logger.info("APoverETH.fetchInterest("+ap_url+","+interest+") ...");
+    Log.d("APoverETH","APoverETH.fetchInterest("+ap_url+","+interest+") ...");
 
     //缺省采用 infura.io 提供的json-rpc服务，可以切换成geth等提供的json-rpc比如 http://localhost:8545
     HashMap<String,String> mapEthNetworkJsonRPCs=new HashMap<String,String>();
@@ -101,7 +101,7 @@ public class APoverETH {
           }
         }
     }catch (Throwable e) {
-        logger.error("APoverETH.fetchInterest() error: "+e.toString());
+    	Log.d("APoverETH-ERROR","APoverETH.fetchInterest() error: "+e.toString());
     }
 
     System.out.println("APoverETH.fetchInterest() str_ap_resp_json:"+str_ap_resp_json);

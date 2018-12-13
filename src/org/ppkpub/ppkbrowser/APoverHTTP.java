@@ -5,19 +5,18 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.io.InputStream;
 
+import android.util.Log;
+
 
 
 public class APoverHTTP {
-  static TestLogger logger = new TestLogger(APoverHTTP.class);
-
-
   public static String fetchInterest(String ap_url, String interest) {
     String str_ap_resp_json=null;
 
     
     try{
       String ap_fetch_url=ap_url+"?pttp_interest="+URLEncoder.encode(interest, "UTF-8");
-      logger.info("APoverHTTP.fetchInterest("+ap_url+") ap_fetch_url="+ap_fetch_url);
+      Log.d("APoverHTTP","APoverHTTP.fetchInterest("+ap_url+") ap_fetch_url="+ap_fetch_url);
         
       URL url = new URL(ap_fetch_url);
       HttpURLConnection.setFollowRedirects(true);  
@@ -33,7 +32,7 @@ public class APoverHTTP {
       
       
       int httpStatusCode = hc.getResponseCode();
-      logger.info("APoverHTTP.fetchInterest() httpStatusCode="+httpStatusCode);
+      Log.d("APoverHTTP","APoverHTTP.fetchInterest() httpStatusCode="+httpStatusCode);
       if (httpStatusCode == HttpURLConnection.HTTP_OK) {
         //通过输入流获取二进制数据
         InputStream inStream = hc.getInputStream();
@@ -47,7 +46,7 @@ public class APoverHTTP {
 
       
     }catch(Exception e){
-      logger.error("APoverHTTP.fetchInterest("+ap_url+") error: "+e.toString());
+    Log.d("APoverHTTP-ERROR","APoverHTTP.fetchInterest("+ap_url+") error: "+e.toString());
     }
     
     System.out.println("APoverHTTP.fetchInterest() str_ap_resp_json:"+str_ap_resp_json);
