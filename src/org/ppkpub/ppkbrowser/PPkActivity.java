@@ -306,6 +306,7 @@ public class PPkActivity extends Activity
         @Override
         protected void onPostExecute(JSONObject result) {
             String result_uri=null;
+            String from_ap_url=null;
             String result_content="<h3>ERROR while loading PPk URI. <br>访问PPk网址时出错了<br>URI:  "+ppkURI+"</h3>";;
             String mimeType="text/html";
             String encoding="utf-8";
@@ -314,6 +315,7 @@ public class PPkActivity extends Activity
             if(result!=null){
                 try {
                     result_uri=result.optString(Config.JSON_KEY_PPK_URI);
+                    from_ap_url=result.optString(Config.JSON_KEY_PPK_CHUNK_URL);
                     mimeType=result.optString(Config.JSON_KEY_PPK_CHUNK_TYPE,mimeType);
                     if( mimeType.toLowerCase().startsWith("text") ){
                     	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.PPK_TEXT_CHARSET);
@@ -335,7 +337,7 @@ public class PPkActivity extends Activity
                 }
                 
             }
-            textStatus.setText("Loaded PPkURI: "+result_uri);
+            textStatus.setText("Loaded PPkURI: "+result_uri + "\nAP: "+from_ap_url);
             webshow.loadDataWithBaseURL(result_uri, result_content, mimeType, encoding, this.ppkURI);
 
             progressBar.setVisibility(View.GONE);
