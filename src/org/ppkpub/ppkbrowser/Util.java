@@ -25,66 +25,17 @@ import android.util.Log;
 public class Util {
 	public static String getPage(String urlString) {
 	    return getPage(urlString, 1);
-    }
+	}
 
-    public static String getPage(String urlString, int retries) {
+	public static String getPage(String urlString, int retries) {
 	    try {
-	      Log.d("Util","Getting URL: "+urlString);
-	      doTrustCertificates();
-	      URL url = new URL(urlString);
-	      HttpURLConnection connection = null;
-	      connection = (HttpURLConnection)url.openConnection();
-	      connection.setUseCaches(false);
-	      connection.addRequestProperty("User-Agent", Config.appName+" "+Config.version); 
-	      connection.setRequestMethod("GET");
-	      connection.setDoOutput(true);
-	      connection.setReadTimeout(10000);
-	      connection.connect();
-
-	      BufferedReader rd  = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-	      StringBuilder sb = new StringBuilder();
-	      String line;
-	      
-	      while ((line = rd.readLine()) != null)
-	      {
-	        sb.append(line + '\n');
-	      }
-	      //System.out.println (sb.toString());
-
-	      return sb.toString();
+	      return CommonHttpUtil.getSourceFromUrl(urlString);
 	    } catch (Exception e) {
-	    	Log.d("Util","Fetch URL error: "+e.toString());
+	      Log.d("Util","Fetch URL error: "+e.toString());
 	    }
-	    return "";
-    }  
+	    return null;
+	}  
 
-    public static void doTrustCertificates() throws Exception {
-        TrustManager[] trustAllCerts = new TrustManager[]{
-            new X509TrustManager() {
-              public java.security.cert.X509Certificate[] getAcceptedIssuers()
-              {
-                return null;
-              }
-              public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType)
-              {
-              }
-              public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType)
-              {
-              }
-            }
-        };
-        try 
-        {
-          SSLContext sc = SSLContext.getInstance("SSL");
-          sc.init(null, trustAllCerts, new java.security.SecureRandom());
-          HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-        } 
-        catch (Exception e) 
-        {
-          System.out.println(e);
-        }
-    }  
-    
     //获取网页标题
   	public static String getPageTitle(String urladdress,String htmlcontent)
   	{
@@ -104,39 +55,7 @@ public class Util {
       return temp.length()>0 ? temp:urladdress;
   	}
   	
-	public static String  fetchURI(String uri){
-	    try{
-	      String[] uri_chunks=uri.split(":");
-	      if(uri_chunks.length<2){
-	        Log.d("Util","Util.fetchURI() meet invalid uri:"+uri);
-	        return null;
-	      }
-	      
-	      if(uri_chunks[0].equalsIgnoreCase("ipfs")){
-	        //return getIpfsData(uri_chunks[1]);
-	    	  return "ipfs not supported";
-	      }else if(uri_chunks[0].equalsIgnoreCase("btmfs")){
-	          return getBtmfsData(uri);
-	      }else if(uri_chunks[0].equalsIgnoreCase("ppk")){
-	        JSONObject obj_ap_resp=PPkURI.fetchPPkURI(uri);
-	        if(obj_ap_resp==null)
-	          return null;
-	        
-	        return obj_ap_resp.optString(Config.JSON_KEY_ORIGINAL_RESP,"ERROR:Invalid PTTP data!");
-	      }else if(uri_chunks[0].equalsIgnoreCase("data")){
-	        int from=uri_chunks[1].indexOf(",");
-	        if(from>=0){
-	          return uri_chunks[1].substring(from+1,uri_chunks[1].length());
-	        } else
-	          return uri_chunks[1];
-	      }else{
-	        return getPage(uri);
-	      }
-	    }catch(Exception e){
-	      Log.d("Util","Util.fetchURI("+uri+") error:"+e.toString());
-	    }
-	    return null;
-    }
+	
 	
 
   public static byte[] toByteArray(List<Byte> in) {
@@ -251,34 +170,86 @@ public class Util {
       return (byte) "0123456789ABCDEF".indexOf(c);   
   }  
   
-  //Upload data to BtmFS and return the uri
-  public static String uploadToBtmfs(byte[] data){
-      String tmp_url=Config.BTMFS_PROXY_URL+"?hex=" + bytesToHexString( data );
-      System.out.println("Using BTMFS Proxy to upload :"+ tmp_url);
+  
+  public static String  fetchURI(String uri){
+    try{
+      String[] uri_chunks=uri.split(":");
+      if(uri_chunks.length<2){
+    	Log.d("Util","fetchURI() meet invalid uri:"+uri);
+        return null;
+      }
       
-      try{
-        String str_resp_json=getPage(tmp_url);
-        System.out.println("str_resp_json ="+ str_resp_json);
-        
-        JSONObject obj_ap_resp=new JSONObject(str_resp_json);
+      if(uri_chunks[0].equalsIgnoreCase("ipfs")){
+        return getIpfsData(uri_chunks[1]);
+      }else if(uri_chunks[0].equalsIgnoreCase("dat")){
+        return getDatData(uri);
+      }else if(uri_chunks[0].equalsIgnoreCase("btmfs")){
+        return getBtmfsData(uri);
+      }else if(uri_chunks[0].equalsIgnoreCase("ppk")){
+        JSONObject obj_ap_resp=PPkURI.fetchPPkURI(uri);
         if(obj_ap_resp==null)
           return null;
         
-        String resp_status=obj_ap_resp.optString("status",null);
-        if( "success".equalsIgnoreCase(resp_status) )
-            return obj_ap_resp.optString("uri",null);
-        else
-            return null;
-      }catch(Exception e){
-        Log.d("Util","Util.uploadToBtmfs() error:"+e.toString());
-        return null;
+        return obj_ap_resp.optString(Config.JSON_KEY_ORIGINAL_RESP,"ERROR:Invalid PTTP data!");
+      }else if(uri_chunks[0].equalsIgnoreCase("data")){
+        int from=uri_chunks[1].indexOf(",");
+        if(from>=0){
+          return uri_chunks[1].substring(from+1,uri_chunks[1].length());
+        } else
+          return uri_chunks[1];
+      }else{
+        return getPage(uri);
       }
+    }catch(Exception e){
+       Log.d("Util","fetchURI("+uri+") error:"+e.toString());
+    }
+    return null;
   }
   
   public static String getBtmfsData(String btmfs_uri){
       String tmp_url=Config.BTMFS_PROXY_URL+"?uri=" + java.net.URLEncoder.encode(btmfs_uri);
-      System.out.println("Using BTMFS Proxy to fetch:"+ tmp_url);
+      Log.d("Util","Using BTMFS Proxy to fetch:"+ tmp_url);
       
       return getPage(tmp_url);
   }
+  
+  public static String getIpfsData(String ipfs_hash_address){
+	  String tmp_url=Config.IPFS_DOWNLOAD_URL+ipfs_hash_address;
+	  Log.d("Util","Using IPFS Proxy to fetch:"+ tmp_url);
+      
+      return getPage(tmp_url);
+    /*try{
+      IPFS ipfs = new IPFS(Config.IPFS_API_ADDRESS);
+      Multihash filePointer = Multihash.fromBase58(ipfs_hash_address);
+      byte[] fileContents = ipfs.cat(filePointer);
+      return new String(fileContents);
+    }catch(Exception e){
+      System.out.println("Util.getIpfsData() error:"+e.toString());
+      
+      String tmp_url=Config.IPFS_DOWNLOAD_URL+ipfs_hash_address;
+      System.out.println("Using IPFS Proxy to fetch:"+ tmp_url);
+      
+      return getPage(tmp_url);
+    }
+    */
+  }
+  
+  public static String getDatData(String dat_uri){
+      String dat_hash=dat_uri.substring("dat://".length());
+      
+      String tmp_url=null;
+      String tmp_page_result=null;
+      for(int kk=0;kk<Config.DAT_DOWNLOAD_URL_LIST.length;kk++){
+          tmp_url=Config.DAT_DOWNLOAD_URL_LIST[kk]+dat_hash;
+          Log.d("Util","Using Dat Proxy to fetch:"+ tmp_url);
+          
+          tmp_page_result=getPage(tmp_url);
+          if(tmp_page_result!=null && tmp_page_result.length()>0){
+              return tmp_page_result;
+          }
+      }
+      return null;
+  }
+
+  
 }

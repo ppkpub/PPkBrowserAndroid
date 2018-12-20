@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -120,6 +121,7 @@ public class PPkActivity extends Activity
                     webshow.goBack();
                     textStatus.setText("Back to "+webshow.getUrl());
                     weburl.setText(webshow.getUrl());
+                    weburl.setTextColor(Color.BLACK);
                 }
             }
         });
@@ -134,6 +136,7 @@ public class PPkActivity extends Activity
                     webshow.goForward();
                     textStatus.setText("Forward to "+webshow.getUrl());
                     weburl.setText(webshow.getUrl());
+                    weburl.setTextColor(Color.BLACK);
                 }
             }
         });
@@ -175,6 +178,7 @@ public class PPkActivity extends Activity
     
     public void gotoURI(String destURI){
         weburl.setText(destURI);
+        weburl.setTextColor(Color.BLACK);
         textStatus.setText("Go to "+destURI);
         Log.d("browser", "Go to " + destURI);
         webshow.getSettings().setJavaScriptEnabled(true);
@@ -230,6 +234,7 @@ public class PPkActivity extends Activity
       public boolean shouldOverrideUrlLoading(WebView view, String url) {
         Log.d("browser","shouldOverrideUrlLoading 。。 url: "+ url);
         weburl.setText(url);
+        weburl.setTextColor(Color.BLACK);
         textStatus.setText("Opening "+url);
         if (url != null && url.toLowerCase().startsWith( Config.PPK_URI_PREFIX )) {
             PPkActivity.this.bLoadingHttpPage=false;
@@ -287,6 +292,7 @@ public class PPkActivity extends Activity
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            weburl.setTextColor(Color.BLACK);
             textStatus.setText("PreExecute PPk resource ");
             //String str_info="<h3>Loading PPk resource ...<br>正在读取PPk资源信息...</h3>";
             //webshow.loadDataWithBaseURL(null, str_info, "text/html", "utf-8", null);
@@ -314,19 +320,28 @@ public class PPkActivity extends Activity
             super.onPostExecute(result);
             if(result!=null){
                 try {
-                    result_uri=result.optString(Config.JSON_KEY_PPK_URI);
-                    from_ap_url=result.optString(Config.JSON_KEY_PPK_CHUNK_URL);
-                    mimeType=result.optString(Config.JSON_KEY_PPK_CHUNK_TYPE,mimeType);
-                    if( mimeType.toLowerCase().startsWith("text") ){
-                    	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.PPK_TEXT_CHARSET);
-                    }else if( mimeType.toLowerCase().startsWith("image") ){
-                    	String image64 = Base64.encodeToString((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK), Base64.DEFAULT);
-                   	    result_content = "<img src=\"data:"+mimeType+";base64," + image64 + "\" />";
-                   	    mimeType = "text/html";
+                	
+                	int validcode=result.optInt(Config.JSON_KEY_PPK_VALIDATION,Config.PPK_VALIDATION_ERROR);
+                    if( validcode == Config.PPK_VALIDATION_IGNORED 
+                      || validcode == Config.PPK_VALIDATION_OK ){
+	                    result_uri=result.optString(Config.JSON_KEY_PPK_URI);
+	                    from_ap_url=result.optString(Config.JSON_KEY_PPK_CHUNK_URL);
+	                    mimeType=result.optString(Config.JSON_KEY_PPK_CHUNK_TYPE,mimeType);
+	                    if( mimeType.toLowerCase().startsWith("text") ){
+	                    	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.PPK_TEXT_CHARSET);
+	                    }else if( mimeType.toLowerCase().startsWith("image") ){
+	                    	String image64 = Base64.encodeToString((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK), Base64.DEFAULT);
+	                   	    result_content = "<img src=\"data:"+mimeType+";base64," + image64 + "\" />";
+	                   	    mimeType = "text/html";
+	                    }else{
+	                    	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.BINARY_DATA_CHARSET);
+	                    }
+	                    
+	                    if(validcode == Config.PPK_VALIDATION_OK)
+	                    	weburl.setTextColor( Color.rgb(34,139,34) );                   	
                     }else{
-                    	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.BINARY_DATA_CHARSET);
+                    	result_content += "<font color='#F00'>Valiade failed!</font>";
                     }
-                    	
                     
                     //setTitle(result_uri); //在标题栏临时显示当前实际访问的URI地址
                     

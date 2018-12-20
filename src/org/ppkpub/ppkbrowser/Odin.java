@@ -17,18 +17,41 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import android.util.Log;
 
 public class Odin {
   static String[] LetterEscapeNumSet={"O","ILA","BCZ","DEF","GH","JKS","MN","PQR","TUV","WXY"};
   
   //public static HashMap<String , String> teamMap = null;
   
-  public static JSONObject getRootOdinInfo(String root_odin) {
+  public static JSONObject getRootOdinInfo(String root_odin)  {
 	String interest="{\"ver\":1,\"hop_limit\":6,\"interest\":{\"uri\":\""+Config.PPK_URI_PREFIX+root_odin+Config.PPK_URI_RESOURCE_MARK+"\"}}";
     String str_ap_resp_json=APoverHTTP.fetchInterest(Config.PPK_ROOT_ODIN_PARSE_API_URL,  interest);
-	  
-    return PPkURI.parseRespOfPTTP(Config.PPK_ROOT_ODIN_PARSE_API_URL,str_ap_resp_json,null);    
+	
+    try {
+    	JSONObject  vd_set=null;
+    	
+    	if(Config.PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY.length()>0){
+    		vd_set=new JSONObject();
+    		vd_set.put(Config.JSON_KEY_PPK_ALGO, Config.PPK_ROOT_ODIN_PARSE_API_SIGN_ALGO);
+    		vd_set.put(Config.JSON_KEY_PPK_PUBKEY, Config.PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY);
+    	}
+    	JSONObject tmp_resp = PPkURI.parseRespOfPTTP(Config.PPK_ROOT_ODIN_PARSE_API_URL,str_ap_resp_json,vd_set);   
+		
+		if(tmp_resp==null || tmp_resp.optInt(Config.JSON_KEY_PPK_VALIDATION,Config.PPK_VALIDATION_ERROR) == Config.PPK_VALIDATION_ERROR ){
+			return null;
+        }else{
+        	return tmp_resp;
+        }
+	} catch (JSONException e) {
+		Log.d("Odin-Exception",e.toString());
+	}
+    
+    return null;
+     
   }
     
   

@@ -170,13 +170,11 @@ public class PPkURI {
     
     String str_ap_resp_json=null;
     if( ap_url.toLowerCase().startsWith("http")){
-      str_ap_resp_json = APoverHTTP.fetchInterest(ap_url,str_interest);
+        str_ap_resp_json = APoverHTTP.fetchInterest(ap_url,str_interest);
     }else if( ap_url.toLowerCase().startsWith("ethap")){
-      str_ap_resp_json = APoverETH.fetchInterest(ap_url,str_interest);
-    }else if( ap_url.toLowerCase().startsWith("btmfs")){
-        str_ap_resp_json = Util.getBtmfsData(ap_url);
-    }else{
-      Log.d("PPkURI","PPkURI.fetchAndValidationAP("+uri+") meet not supported ap url:"+ap_url);
+        str_ap_resp_json = APoverETH.fetchInterest(ap_url,str_interest);
+    }else {
+        str_ap_resp_json = Util.fetchURI(ap_url);
     }
     
     obj_ap_resp=parseRespOfPTTP(ap_url,str_ap_resp_json,vd_set);
@@ -306,8 +304,7 @@ public class PPkURI {
             //String ap_resp_sign_pubkey=sign_pieces[2].trim(); //just for test
             Log.d("PPkURI","ap_resp_sign_algo="+ap_resp_sign_algo+",ap_resp_sign_base64="+ap_resp_sign_base64);
             
-            //if(RSACoder.verify(byteBuffer.array(), vd_set_pubkey,ap_resp_sign_base64,vd_set_algo )){
-            if(true){ //test
+            if(RSACoder.verify(byteBuffer.array(), vd_set_pubkey,ap_resp_sign_base64,vd_set_algo )){
                obj_ap_resp.put(Config.JSON_KEY_PPK_VALIDATION,Config.PPK_VALIDATION_OK);
                Log.d("PPkURI","Found valid chunk");
                //Log.d("PPkURI","byteBuffer.array()="+Util.bytesToHexString(byteBuffer.array()));

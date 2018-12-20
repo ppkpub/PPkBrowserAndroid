@@ -10,7 +10,10 @@ public class Config {
   public static String appName = "PPkBrowserForAndroid";
   public static String defaultLang = "EN";
   
-  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://45.32.19.146/odin/";
+  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://45.32.19.146/odin/";  //解析根标识的服务API
+  public static String PPK_ROOT_ODIN_PARSE_API_SIGN_ALGO ="SHA256withRSA" ;//解析根标识的签名算法
+  public static String PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY ="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDTPD2Kkey5UIgOtlbu/wM8JGiTxNKF6fF4YQPU\r\niSR0tIoJWjqdMwL3AY36nJ2zp1VOzIbZGMrgKJTVu8YrNO2sLLTaaIsjaVk3mYRfCXq1tNbE1tyb\r\nyOORvNrcxlPIYHHT428C/aWm8wZ1MY/Ybru4zEPlMBj/ZHZ9yBYZ3vy4wQIDAQAB\r\n"; //对标识解析结果的验证公钥
+  //public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://test.ppkpub.org:8088/";
   public static String PPK_URI_PREFIX = "ppk:";
   public static String PPK_URI_RESOURCE_MARK="#";
   public static String ppkDefaultHomepage      = "ppk:0/";
@@ -22,7 +25,7 @@ public class Config {
   
   //version
   public static Integer majorVersion = 0;
-  public static Integer minorVersion = 203;
+  public static Integer minorVersion = 205;
   public static String version = Integer.toString(majorVersion)+"."+Integer.toString(minorVersion);
   public static Integer majorVersionDB = 1;
   
@@ -90,9 +93,12 @@ public class Config {
   public static int PPK_VALIDATION_IGNORED   = 1;
   public static int PPK_VALIDATION_ERROR     = 2;
   
+  //Dat
+  public static String[] DAT_DOWNLOAD_URL_LIST={"http://45.32.19.146/dat/?uri=dat://","https://datbase.org/download/"}; 
+  
   //IPFS
-  public static String IPFS_API_ADDRESS="/ip4/127.0.0.1/tcp/5001"; //"https://ipfs.infura.io:5001"
-  public static String IPFS_PROXY_URL="https://ipfs.infura.io/ipfs/";
+  //public static String IPFS_API_ADDRESS="/ip4/45.32.19.146/tcp/5001"; //"https://ipfs.infura.io:5001"
+  public static String IPFS_DOWNLOAD_URL="http://45.32.19.146:8080/ipfs/";//"https://ipfs.infura.io/ipfs/";
   
   //Bytom File System
   public static String BTMFS_PROXY_URL="http://45.32.19.146/btmfs/"; //Test service
