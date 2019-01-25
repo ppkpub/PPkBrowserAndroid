@@ -1,23 +1,21 @@
 package org.ppkpub.ppkbrowser;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import android.util.Base64;
 import android.util.Log;
@@ -29,7 +27,7 @@ public class Util {
 
 	public static String getPage(String urlString, int retries) {
 	    try {
-	      return CommonHttpUtil.getSourceFromUrl(urlString);
+	      return CommonHttpUtil.getInstance().getContentFromUrl(urlString);
 	    } catch (Exception e) {
 	      Log.d("Util","Fetch URL error: "+e.toString());
 	    }
@@ -147,9 +145,13 @@ public class Util {
    * @return byte[]  
    */  
   public static byte[] hexStringToBytes(String hexString) {   
-      if (hexString == null || hexString.equals("")) {   
+	  if (hexString == null) {   
           return null;   
-      }   
+      }
+      if (hexString.equals("")) {   
+          return new byte[0];   
+      }
+      
       hexString = hexString.toUpperCase();   
       int length = hexString.length() / 2;   
       char[] hexChars = hexString.toCharArray();   
@@ -250,6 +252,285 @@ public class Util {
       }
       return null;
   }
+  
+  
+
+  //缺省获取指定地址未花费交易的方法，包含多重签名类型的输出
+  public static List<UnspentOutput> getUnspents(String address) {
+	  List<UnspentOutput> unspents;
+	  
+	  unspents=getUnspents(address,null);
+	  if(unspents==null){
+		  unspents=getUnspents(address,Config.proxyURL);
+	  }
+	  if(unspents==null){
+		  unspents=getUnspentsWithoutDustTX(address);
+	  }
+	  return unspents;
+  }
+  
+  public static List<UnspentOutput> getUnspents(String address,String proxy_url) {
+    if(!Config.useDustTX){
+      return getUnspentsWithoutDustTX(address);
+    }
+    
+    //优先使用缓存的上一次发送交易输出UTXO
+    List<UnspentOutput> unspents = BitcoinWallet.getCachedLastUnspents(address);
+    String lastTxHash=null;
+    int txCounter=0;
+    Double valueCounter=0.0;
+
+    //System.out.println("Util.getUnspents() getCachedLastUnspents:"+unspents);
+    if(unspents!=null){
+        for (UnspentOutput unspent : unspents) {
+            lastTxHash = unspent.txid;
+            txCounter++;
+            valueCounter += unspent.amt_satoshi.doubleValue();
+        }
+        System.out.println("Found cached utxo:"+ lastTxHash +" , txCounter="+txCounter+",valueCounter="+valueCounter);
+        
+        if(valueCounter >  Config.ppkStandardDataFee + (Config.MAX_MULTISIG_TX_NUM+1) * Config.dustSize){
+            return unspents;
+        }
+        
+        System.out.println("The cached utxos not enough for new transaction.");
+    }
+    
+    //调用API服务来获取可用的未花费交易列表
+    unspents=new ArrayList<UnspentOutput> ();
+
+    try {
+        String result=null;
+        JSONObject tempObject=null;
+        
+        /* 待完善
+        //检查API服务是否正常更新到最新区块
+        BitcoinWallet blocks = BitcoinWallet.getInstance();
+        int block_height=blocks.bitcoinBlock ; // Current block height in the longest chain
+        result = CommonHttpUtil.getInstance().getContentFromUrl( "https://chain.api.btc.com/v3/block/" + block_height  );
+        tempObject=new JSONObject(result);
+        
+        //System.out.println("block_height: "+block_height +"\ntempObject="+tempObject);
+        if(tempObject.getJSONObject("data").getInt("height")!=block_height){
+            throw new IOException("API mismatched the block height:"+block_height);
+        }
+        */
+
+        //API服务正常则继续调用查询未花费交易列表
+       	result = CommonHttpUtil.getInstance().getContentFromUrl( "https://chain.api.btc.com/v3/address/" + address + "/unspent",proxy_url );
+       	tempObject=new JSONObject(result);
+
+       	Integer total_count=tempObject.getJSONObject("data").getInt("total_count");
+        Integer pagesize=tempObject.getJSONObject("data").getInt("pagesize");
+        
+        if(total_count>pagesize){
+          result = CommonHttpUtil.getInstance().getContentFromUrl( "https://chain.api.btc.com/v3/address/" + address + "/unspent?page="+ 
+                            Math.round( Math.ceil((double)total_count/(double)pagesize) ) );
+          tempObject=new JSONObject(result);
+        }
+        
+        JSONArray tempArray=tempObject.getJSONObject("data").getJSONArray("list");
+        
+        txCounter=0;
+        valueCounter=0.0;
+        for(int tt=tempArray.length()-1;tt>=0;tt--){
+            JSONObject item_obj=(JSONObject)tempArray.get(tt);
+            
+            UnspentOutput tempUnspentObj=new UnspentOutput();
+            
+            tempUnspentObj.amt_satoshi=BigInteger.valueOf(item_obj.getLong("value"));
+            tempUnspentObj.txid=item_obj.getString("tx_hash");
+            tempUnspentObj.vout=item_obj.getInt("tx_output_n");
+            tempUnspentObj.scriptPubKeyHex="";
+            
+            System.out.println("  tempUnspentObj: "+tempUnspentObj.toString());
+            
+            try {
+                result = CommonHttpUtil.getInstance().getContentFromUrl( "https://blockchain.info/zh-cn/rawtx/" + tempUnspentObj.txid,proxy_url );
+                JSONObject tempObjectTx=new JSONObject(result);
+                JSONArray tempArrayOutputs=tempObjectTx.getJSONArray("out");
+                JSONObject item_output=(JSONObject)tempArrayOutputs.get(tempUnspentObj.vout);
+
+                tempUnspentObj.scriptPubKeyHex=item_output.getString("script");
+            }catch (Exception e1) {
+              Log.d("Util"," getUnspents() blockchain.info  : "+e1.toString());
+              try {
+                  result = CommonHttpUtil.getInstance().getContentFromUrl( "https://chain.api.btc.com/v3/tx/" + tempUnspentObj.txid + "?verbose=3",proxy_url );
+                  //System.out.println("Get https://chain.api.btc.com/v3/tx/" + tempUnspentObj.txid + "?verbose=3\n  result: "+result);
+                  JSONObject tempObjectTx=new JSONObject(result);
+                  JSONArray tempArrayOutputs=tempObjectTx.getJSONObject("data").getJSONArray("outputs");
+                  JSONObject item_output=(JSONObject)tempArrayOutputs.get(tempUnspentObj.vout);
+
+                  tempUnspentObj.scriptPubKeyHex=item_output.getString("script_hex");
+              }catch (Exception e2) {
+                  Log.d("Util"," getUnspents() api.btc.com: "+e2.toString());
+              }
+            }
+            //System.out.println(">>>>>>>>>>tempUnspentObj["+tt+"]:"+tempUnspentObj.txid+","+tempUnspentObj.amt_satoshi+","+tempUnspentObj.vout+","+tempUnspentObj.scriptPubKeyHex);
+            
+            if(tempUnspentObj.scriptPubKeyHex.length()>0){
+              unspents.add(tempUnspentObj);
+              valueCounter += item_obj.getDouble("value");
+              txCounter ++ ;
+            }
+            
+            if( txCounter>Config.MAX_MULTISIG_TX_NUM+1 
+               && (valueCounter > Config.maxFee || valueCounter >  Config.ppkStandardDataFee + (Config.MAX_MULTISIG_TX_NUM+1) * Config.dustSize))  {  //if enough for max ODIN fee 
+              break;
+            }
+        }
+    } catch (Exception e) {
+      //此API有异常，自动切换到另一个备用API
+      Log.d("Util","getUnspents() BTC.com API exception:"+e.toString());
+      return null;
+    }
+    
+    return unspents;
+  }
+
+  //备用的获取指定地址未花费交易的方法，不包含多重签名类型的输出
+  public static List<UnspentOutput> getUnspentsWithoutDustTX(String address) {
+	  List<UnspentOutput> unspents;
+	  
+	  unspents=getUnspentsWithoutDustTX(address,null);
+	  if(unspents==null){
+		  unspents=getUnspentsWithoutDustTX(address,Config.proxyURL);
+	  }
+	  return unspents;
+  }
+  
+  public static List<UnspentOutput> getUnspentsWithoutDustTX(String address,String proxy_url) {
+    List<UnspentOutput> unspents = new ArrayList<UnspentOutput> ();
+    try {
+        String result = CommonHttpUtil.getInstance().getContentFromUrl( "https://blockchain.info/unspent?active="+address,proxy_url);
+        //String result="{\"unspent_outputs\":[{\"tx_hash\":\"1b93a91401cc67eacbecdba413bc5ec7bb10bdf6f6f6e4a9e7117bee29f9cb02\",\"tx_hash_big_endian\":\"02cbf929ee7b11e7a9e4f6f6f6bd10bbc75ebc13a4dbeccbea67cc0114a9931b\",\"tx_index\":406599423,\"tx_output_n\":2,\"script\":\"76a914b4e2b540b202be227031921163c419f9fa2224ce88ac\",\"value\":10000,\"value_hex\":\"2710\",\"confirmations\":155}]}";
+    	JSONObject tempResultObject=new JSONObject(result);
+        JSONArray tempArray=tempResultObject.getJSONArray("unspent_outputs");
+        ArrayList<HashMap<String, Object>> item_set_array = new ArrayList<HashMap<String, Object>>();
+        for(int tt=0;tt<tempArray.length();tt++){
+            JSONObject item_obj=(JSONObject)tempArray.get(tt);
+            
+            UnspentOutput tempUnspentObj=new UnspentOutput();
+            tempUnspentObj.amt_satoshi=BigInteger.valueOf(item_obj.getLong("value"));
+            tempUnspentObj.txid=item_obj.getString("tx_hash_big_endian");
+            tempUnspentObj.vout=item_obj.getInt("tx_output_n");
+            //tempUnspentObj.type=item_obj.getString("");
+            //tempUnspentObj.confirmations=item_obj.getInt("confirmations");
+
+            //tempUnspentObj.scriptPubKeyAsm="Invalid";
+            tempUnspentObj.scriptPubKeyHex=item_obj.getString("script");
+
+            unspents.add(tempUnspentObj);
+        }
+    } catch (Exception e) {
+        Log.d("Util"," getUnspentsWithoutDustTX() "+e.toString());
+    }
+    return unspents;
+  }
+
+  public static TransactionInfo getTransaction(String txHash) {
+    
+    try {
+      String result = CommonHttpUtil.getInstance().getContentFromUrl(transactionAddress(txHash));
+    	
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      TransactionInfo transactionInfo = objectMapper.readValue(result, new TypeReference<TransactionInfo>() {});
+      return transactionInfo;
+    } catch (Exception e) {
+      Log.d("Util","getTransaction() "+e.toString());
+      return null;
+    }
+  }
+  
+  public static String transactionAddress(String txHash) {
+    return "https://api.biteasy.com/blockchain/v1/transactions/"+txHash;
+  }
+
+  public static BigInteger getBTCBalance(String address) {
+    if(!Config.useDustTX){
+      return getBTCBalanceWithoutDustTX(address);
+    }
+
+    try {
+      String result = CommonHttpUtil.getInstance().getContentFromUrl( "https://chain.api.btc.com/v3/address/"+address);
+    	
+      JSONObject tempResultObject=new JSONObject(result);
+      tempResultObject=tempResultObject.getJSONObject("data");
+
+      return  BigInteger.valueOf(tempResultObject.getLong("balance"));
+    } catch (Exception e) {
+      return getBTCBalanceWithoutDustTX(address);
+    }
+  }
+
+  public static BigInteger getBTCBalanceWithoutDustTX(String address) {
+    try {
+      String result = getPage( "https://blockchain.info/zh-cn/address/"+address+"?format=json&limit=0" );
+    	
+      JSONObject addressInfo=new JSONObject(result);
+      return BigInteger.valueOf(addressInfo.getLong("final_balance"));
+    } catch (Exception e) {
+      Log.d("Util","getBTCBalanceWithoutDustTX() "+e.toString());
+      return BigInteger.ZERO;
+    }
+  }
+  
+  //生成有效的公钥数据块来嵌入指定的数据内容
+  public static byte[] generateValidPubkey(String data_str){
+    System.out.println("Util.generateValidPubkey() data_str="+data_str);
+    byte[] data = null;
+    
+    try {
+      data = data_str.getBytes(Config.BINARY_DATA_CHARSET);
+      
+      return generateValidPubkey(data);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+  
+  public static byte[] generateValidPubkey(byte[] data){
+    if(data.length>Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH){
+      System.out.println("The data segment length should be less than " + Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH);
+      return null;
+    }
+    
+    List<Byte> dataArrayList = new ArrayList<Byte>();
+    
+    try {
+      dataArrayList = Util.toByteArrayList(data);
+      
+      for(int kk=dataArrayList.size();kk<Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH;kk++){
+        dataArrayList.add((byte)0x20); //追加空格
+      }
+    } catch (Exception e) {
+      return null;
+    }
+
+    dataArrayList.add(0,(byte) data.length ); 
+    dataArrayList.add(0, Config.PPK_PUBKEY_TYPE_FLAG); 
+    
+    while(dataArrayList.size()<Config.PPK_PUBKEY_LENGTH)
+      dataArrayList.add((byte)0x20);
+    
+    data = Util.toByteArray(dataArrayList);
+
+    return  data;
+    /*
+    for(int bb=0;bb<256;bb++){
+      try{
+        data[data.length-1]=(byte) bb;
+        ECKey tmp_key_more=ECKey.fromPublicOnly(data);
+        System.out.println("Try["+bb+"]:"+(char)bb+" ok : "+tmp_key_more.toString());
+        return  data;
+      } catch (Exception e) {
+        //System.out.println("Meet pubkey error:"+e.toString());
+      }
+    }
+    return null;
+    */
+  } 
 
   
 }

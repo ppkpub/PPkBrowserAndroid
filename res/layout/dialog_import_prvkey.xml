@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/import_prvkey_label"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text=" 私钥："
+        android:gravity="left"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+	    <EditText
+	        android:id="@+id/import_prvkey"
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:inputType="none"
+	        android:editable="false"
+	        android:textIsSelectable="false" 
+	        android:layout_weight="9"
+	        android:scrollHorizontally="true" />
+
+         <Button
+	        android:id="@+id/import_btnCopyPrvkey"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="复制" />
+
+    </LinearLayout>
+    
+    <CheckBox
+        android:id="@+id/import_checkBoxBackupedPrvkey"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="我已经备份好私钥！" />
+
+    <TextView
+        android:id="@+id/import_warningMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dip"
+        android:layout_marginRight="20dip"
+        android:gravity="center_horizontal"
+        android:text=""
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+</LinearLayout>

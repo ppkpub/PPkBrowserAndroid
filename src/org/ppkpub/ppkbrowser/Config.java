@@ -1,36 +1,46 @@
 package org.ppkpub.ppkbrowser;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
-import java.lang.Math;
-
 public class Config {
   //name
-  public static String appName = "PPkBrowserForAndroid";
+  public static String appName = "PPkBrowserAndroid";
   public static String defaultLang = "EN";
   
-  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://45.32.19.146/odin/";  //解析根标识的服务API
+  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://tool.ppkpub.org/odin/";  //解析根标识的服务API
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_ALGO ="SHA256withRSA" ;//解析根标识的签名算法
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY ="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDTPD2Kkey5UIgOtlbu/wM8JGiTxNKF6fF4YQPU\r\niSR0tIoJWjqdMwL3AY36nJ2zp1VOzIbZGMrgKJTVu8YrNO2sLLTaaIsjaVk3mYRfCXq1tNbE1tyb\r\nyOORvNrcxlPIYHHT428C/aWm8wZ1MY/Ybru4zEPlMBj/ZHZ9yBYZ3vy4wQIDAQAB\r\n"; //对标识解析结果的验证公钥
-  //public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://test.ppkpub.org:8088/";
+  /*
+  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://test.ppkpub.org:8088/"; //备用的根标识的服务API
+  public static String PPK_ROOT_ODIN_PARSE_API_SIGN_ALGO ="" ;
+  public static String PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY ="";
+  */
   public static String PPK_URI_PREFIX = "ppk:";
   public static String PPK_URI_RESOURCE_MARK="#";
-  public static String ppkDefaultHomepage      = "ppk:0/";
-  
+  public static String ppkDefaultHomepage  = "ppk:0/";
+  public static String ppkSettingPage      = "about:settings";
   
   public static boolean debugKey = false;
   
-  public static String  jdbcUrl      = "";
+  public static String  jdbcURL      = null;
+  public static String  proxyURL     = "http://tool.ppkpub.org/odin/proxy.php";
   
   //version
   public static Integer majorVersion = 0;
-  public static Integer minorVersion = 205;
+  public static Integer minorVersion = 3;
   public static String version = Integer.toString(majorVersion)+"."+Integer.toString(minorVersion);
   public static Integer majorVersionDB = 1;
   
   public static String defaultSqliteFile = null;  
   
+  //bitcoin
+  public static boolean useDustTX = true;
+  public static Integer dustSize = 1000;
+  //public static Integer minOrderMatchBTC = 100000;
+  //public static Integer minFee = 10000;
+  public static Integer maxFee = 99999;  //Avoid sending too much btc than normal fee
+  public static Integer dataValue = 0;
+  public static Integer btc_unit = 100000000;
+  
+  public static Integer ppkStandardDataFee = 1000;
  
   //PPk
   public static long ppkToolCreationTime = 1400561240-1;  //UTC 2014-5-20 04:47:20
@@ -94,17 +104,20 @@ public class Config {
   public static int PPK_VALIDATION_ERROR     = 2;
   
   //Dat
-  public static String[] DAT_DOWNLOAD_URL_LIST={"http://45.32.19.146/dat/?uri=dat://","https://datbase.org/download/"}; 
+  public static String[] DAT_DOWNLOAD_URL_LIST={"http://tool.ppkpub.org/dat/?uri=dat://","https://datbase.org/download/"}; 
   
   //IPFS
-  //public static String IPFS_API_ADDRESS="/ip4/45.32.19.146/tcp/5001"; //"https://ipfs.infura.io:5001"
-  public static String IPFS_DOWNLOAD_URL="http://45.32.19.146:8080/ipfs/";//"https://ipfs.infura.io/ipfs/";
+  //public static String IPFS_API_ADDRESS="/ip4/tool.ppkpub.org/tcp/5001"; //"https://ipfs.infura.io:5001"
+  public static String IPFS_DOWNLOAD_URL="http://tool.ppkpub.org:8080/ipfs/";//"https://ipfs.infura.io/ipfs/";
   
   //Bytom File System
-  public static String BTMFS_PROXY_URL="http://45.32.19.146/btmfs/"; //Test service
+  public static String BTMFS_PROXY_URL="http://btmdemo.ppkpub.org/btmfs/"; //Test service
   
   //Charset
   public static String PPK_TEXT_CHARSET="UTF-8";  //适用文本内容
   public static String BINARY_DATA_CHARSET="ISO-8859-1";  //适用原始二进制数据与字符串类型间的转换
+  
+  //Extension
+  public static String EXT_PEER_WEB="PeerWeb";  //PeerWeb扩展接口对象
 
 }

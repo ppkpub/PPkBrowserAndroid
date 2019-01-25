@@ -42,20 +42,27 @@ public final class R {
         public static final int wallet=0x7f020012;
     }
     public static final class id {
-        public static final int action_settings=0x7f08000a;
+        public static final int action_settings=0x7f080010;
         public static final int buttonBack=0x7f080004;
         public static final int buttonForward=0x7f080005;
         public static final int buttonGo=0x7f080001;
         public static final int buttonHome=0x7f080008;
         public static final int buttonRefresh=0x7f080007;
+        public static final int buttonSetting=0x7f080009;
         public static final int buttonStop=0x7f080006;
+        public static final int import_btnCopyPrvkey=0x7f08000d;
+        public static final int import_checkBoxBackupedPrvkey=0x7f08000e;
+        public static final int import_prvkey=0x7f08000c;
+        public static final int import_prvkey_label=0x7f08000b;
+        public static final int import_warningMessage=0x7f08000f;
         public static final int progressBarLoadPage=0x7f080002;
-        public static final int textStatus=0x7f080009;
+        public static final int textStatus=0x7f08000a;
         public static final int webshow=0x7f080003;
         public static final int weburl=0x7f080000;
     }
     public static final class layout {
         public static final int activity_ppk=0x7f030000;
+        public static final int dialog_import_prvkey=0x7f030001;
     }
     public static final class menu {
         public static final int ppk=0x7f070000;
