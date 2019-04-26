@@ -1,21 +1,12 @@
 package org.ppkpub.ppkbrowser;
 
 import java.io.IOException;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
+import java.util.Map;
 
-//import okhttp3.OkHttpClient; 
-//import okhttp3.Request;
-//import org.apache.http.util.CharsetUtils;
+import com.squareup.okhttp.*; //okhttp2
 
 public final class CommonHttpUtil {
-	private DefaultHttpClient httpclient = new DefaultHttpClient();
+	private OkHttpClient client = new OkHttpClient();
 	
     //协议类型
     private final static String HTTP = "http:";
@@ -36,34 +27,18 @@ public final class CommonHttpUtil {
         		getContentFromUrl(url) : getContentFromUrl( proxy_url +"?url="+ java.net.URLEncoder.encode(url) );
     }
 
-    public String getContentFromUrl(String url) throws IOException {
-        HttpGet httpget = new HttpGet(url);
-
-        System.out.println("Executing request " + httpget.getRequestLine());
-
-        // Create a custom response handler
-        ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
-            @Override
-            public String handleResponse(
-                    final HttpResponse response) throws ClientProtocolException, IOException {
-                int status = response.getStatusLine().getStatusCode();
-                if (status >= 200 && status < 300) {
-                    HttpEntity entity = response.getEntity();
-                    return entity != null ? EntityUtils.toString(entity) : null;
-                } else {
-                    throw new ClientProtocolException("Unexpected response status: " + status);
-                }
-            }
-
-        };
-        String responseBody = httpclient.execute(httpget, responseHandler);
-        System.out.println("----------------------------------------");
-        return responseBody;
+    public String getContentFromUrl(String url) {
+        try{
+            Request request = new Request.Builder().url(url).build();
+            return  client.newCall(request).execute().body().string();
+        }catch(IOException e){
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    /*
     private String sendPostForm(String url,final Map<String,String> params) throws Exception {
-        FormBody.Builder builder = new FormBody.Builder(CharsetUtils.get("UTF-8"));
+        FormEncodingBuilder builder =  new FormEncodingBuilder();
         if (params != null) {
             for (Map.Entry<String, String> entry: params.entrySet()) {
                 builder.add(entry.getKey(), entry.getValue());
@@ -74,5 +49,27 @@ public final class CommonHttpUtil {
         return client.newCall(request).execute().body().string();
  
     }
- 	*/
+
+    public String sendPostJSON(String url,final String post_json)throws Exception {
+        return sendPostContent(url, post_json, "application/json");
+    }
+    public String sendPostContent(String url,final String post_content,String content_type ) throws Exception {
+        String result=null;
+        MediaType media_type = MediaType.parse(content_type);
+
+        RequestBody requestBody = RequestBody.create(media_type,post_content);
+        Request request = new Request
+                .Builder()
+                .post(requestBody)//Post请求的参数传递
+                .url(url)
+                .build();
+        try{
+            Response response = client.newCall(request).execute();
+            result = response.body().string();
+            response.body().close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        return result;
+    }
 }

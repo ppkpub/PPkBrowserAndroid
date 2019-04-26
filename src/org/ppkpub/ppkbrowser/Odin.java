@@ -1,15 +1,24 @@
 package org.ppkpub.ppkbrowser;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.wallet.Wallet;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.util.Log;
 
 public class Odin {
+  public static String mSetFileName = "resources_odin_set";
+	
   static String[] LetterEscapeNumSet={"O","ILA","BCZ","DEF","GH","JKS","MN","PQR","TUV","WXY"};
+  
+  private static PPkActivity mMainActivity=null;
+  private static JSONObject mObjOdinSet;
+  public static String  statusMessage = "";
   
   //public static HashMap<String , String> teamMap = null;
   
@@ -41,7 +50,7 @@ public class Odin {
   }
     
   
-  //将根标识中的英文字母按ODIN标识规范转换成对应数字
+  //将根标识中的英文字母按奥丁号规范转换成对应数字
   public static String convertLetterToNumberInRootODIN(String  original_odin){  
      String converted_odin="";
      original_odin=original_odin.toUpperCase();
@@ -131,5 +140,78 @@ public class Odin {
     }
     
     return listEscaped;
+  }
+  
+  public static void init(PPkActivity main_activity ) {
+	  mMainActivity=main_activity;
+
+      try {
+    	mObjOdinSet=new JSONObject();
+    	
+    	String  odin_json=mMainActivity.getPrivateData(mSetFileName);
+    	Log.d("BitcoinWallet","odin_json="+odin_json);
+        if (odin_json!=null && odin_json.length()>0 ) {
+          statusMessage = Language.getLangLabel("Found odin setting data"); 
+          Log.d("Odin",statusMessage);
+          
+          try{
+        	  mObjOdinSet=new JSONObject(odin_json); 
+          }catch(Exception ex){
+        	  mObjOdinSet=new JSONObject();
+        	  Log.d("Odin","Load odin setting data failed!"+ex.toString());
+          }
+        } else {
+          statusMessage = Language.getLangLabel("Creating new odin setting file"); 
+          Log.d("Odin",statusMessage);
+          
+          mObjOdinSet.put("encrypted",false);
+        }
+            
+      } catch (Exception e) {
+        Log.d("Odin","Error during init: "+e.toString());
+        //e.printStackTrace();
+        //System.exit(-1);
+      }
+    
+  }
+  
+  //获得当前使用的奥丁号
+  public static String getDefaultOdinURI() {
+    return mObjOdinSet.optString("default", null);
+  }
+  
+  //设置当前使用的BTC地址
+  public static boolean setDefaultOdinURI(String odin_uri) {
+	try {
+		mObjOdinSet.put("default", odin_uri);
+		saveOdinSet();
+		return true;
+	} catch (JSONException e) {
+		return false;
+	}
+  }
+  
+  public static void saveOdinSet() {
+	  String odin_json=mObjOdinSet.toString();
+	  Log.d("Odin","odin_json="+odin_json);
+	  mMainActivity.putPrivateData(mSetFileName,odin_json);
+  }
+  
+  public static String getBackupData(  ) {
+	  return mMainActivity.getPrivateData(mSetFileName);
+  }
+  
+  public static boolean restoreBackupData( String data  ) {
+	  try{
+		  JSONObject tmpObjSet=new JSONObject(data); 
+		  mObjOdinSet=tmpObjSet;
+		  saveOdinSet();
+    	  return true;
+	  } catch (Exception e) {
+        Log.d("Odin","RestoreBackupData failed: "+e.toString());
+        //e.printStackTrace();
+      }
+	  
+	  return false;
   }
 }

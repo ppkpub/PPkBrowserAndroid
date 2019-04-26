@@ -12,19 +12,47 @@ import org.json.JSONObject;
 
 
 public class PPkURI {
+  //判断是否是合法的PPK资源网址
+  public static boolean  isValidPPkURI(String uri){
+	  if(uri==null)
+		  return false;
+	  
+	  if(!uri.toLowerCase().startsWith(Config.PPK_URI_PREFIX)
+		   && !uri.toLowerCase().startsWith(Config.DIDPPK_URI_PREFIX)
+		  )
+		  return false;
+	  
+	  if( uri.indexOf("//") >0 || uri.indexOf("##") >0 ) {
+		  return false;
+	  }
+	  
+      return true;
+  }
   
+  //对类似DID起始网址转换得到实际的PPK资源网址，如果出错则返回null
+  public static String  getRealPPkURI(String uri){
+	  if(!isValidPPkURI( uri ))
+		  return null;
+	  
+	  if( uri.toLowerCase().startsWith(Config.DIDPPK_URI_PREFIX)) 
+	      	uri = Config.PPK_URI_PREFIX + uri.substring(Config.DIDPPK_URI_PREFIX.length());
+	  
+      return uri;
+  }
+	
   public static JSONObject  fetchPPkURI(String uri){
     Log.d("PPkURI","==========================\nPPkURI.fetchPPkURI: "+uri);
-    
+
     JSONObject  obj_newest_ap_resp=null;
     try{
-      if(!uri.toLowerCase().startsWith(Config.PPK_URI_PREFIX)  
-         || uri.indexOf("//") >0 
-         || uri.indexOf("##") >0 
-         ){
+
+      if(!isValidPPkURI(uri)){
         Log.d("PPkURI","PPkURI.fetchPPkURI() meet invalid ppk-uri:"+uri);
         return null;
       }
+      
+      //兼容DID格式的处理
+      uri=getRealPPkURI(uri);
       
       int path_mark_posn=uri.indexOf('/');
       int resoure_mark_posn=uri.indexOf('#');
@@ -55,7 +83,7 @@ public class PPkURI {
       }
       Log.d("PPkURI","uri="+uri+" , parent_odin_path="+parent_odin_path+", resource_id="+resource_id+"\n");
       
-      //获取ODIN标识对应访问点和签名验证参数
+      //获取奥丁号对应访问点和签名验证参数
       String formated_ppk_uri ="";
       JSONObject odin_set ;
       if(parent_odin_path.length()==0){ //resource is root ODIN 
@@ -374,5 +402,7 @@ public class PPkURI {
     else
       return 1;
   }
+  
+  
 }
 

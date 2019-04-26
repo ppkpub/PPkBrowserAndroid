@@ -40,7 +40,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <WebView
+    <org.ppkpub.ppkbrowser.MyWebView
         android:layout_weight="20"
         android:id="@+id/webshow"
         android:layout_width="match_parent"
@@ -53,6 +53,11 @@
         android:gravity="center_horizontal"
          >
         
+        <ImageButton
+            android:id="@+id/buttonHongBao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/btc_hb" />
         <ImageButton
             android:id="@+id/buttonBack"
             android:layout_width="wrap_content"

@@ -18,6 +18,7 @@ import android.util.Base64;
  */  
 public abstract class Coder {  
     public static final String KEY_SHA = "SHA";  
+    public static final String KEY_SHA256 = "SHA256";  
     public static final String KEY_MD5 = "MD5";  
   
     /** 
@@ -81,6 +82,22 @@ public abstract class Coder {
     public static byte[] encryptSHA(byte[] data) throws Exception {  
   
         MessageDigest sha = MessageDigest.getInstance(KEY_SHA);  
+        sha.update(data);  
+  
+        return sha.digest();  
+  
+    }  
+    
+    /** 
+     * SHA256º”√‹ 
+     *  
+     * @param data 
+     * @return 
+     * @throws Exception 
+     */  
+    public static byte[] encryptSHA256(byte[] data) throws Exception {  
+  
+        MessageDigest sha = MessageDigest.getInstance(KEY_SHA256);  
         sha.update(data);  
   
         return sha.digest();  

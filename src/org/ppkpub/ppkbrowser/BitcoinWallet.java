@@ -36,16 +36,17 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptChunk;
 
 import android.util.Log;
+import android.widget.Toast;
 
 
 public class BitcoinWallet  {
+  final public static String mWalletName = "resources_wallet_bitcoin";
+	
   public static NetworkParameters params;
   
-  private static PPkActivity mainActivity=null;
-  
-  private static Wallet wallet=null;
-  private static String walletName = "resources_wallet_bitcoin";
-  private static JSONObject objWalletSet;
+  private static PPkActivity mMainActivity=null;
+  private static Wallet mWallet=null;
+  private static JSONObject mObjWalletSet;
 
   public static String  statusMessage = "";
  
@@ -54,23 +55,23 @@ public class BitcoinWallet  {
 
   public static void init(PPkActivity main_activity ) {
       //Locale.setDefault(new Locale("en", "US"));
-	  mainActivity=main_activity;
+	  mMainActivity=main_activity;
       params = MainNetParams.get();
 
       try {
-    	wallet = new Wallet(params);
-    	objWalletSet=new JSONObject();
+    	mWallet = new Wallet(params);
+    	mObjWalletSet=new JSONObject();
     	
-    	String  wallet_json=mainActivity.getPrivateData(walletName);
-    	Log.d("BitcoinWallet","wallet_json="+wallet_json);
+    	String  wallet_json=mMainActivity.getPrivateData(mWalletName);
+    	//Log.d("BitcoinWallet","wallet_json="+wallet_json);
         if (wallet_json!=null) {
           statusMessage = Language.getLangLabel("Found wallet data"); 
           Log.d("BitcoinWallet",statusMessage);
           
           try{
-        	  objWalletSet=new JSONObject(wallet_json); 
+        	  mObjWalletSet=new JSONObject(wallet_json); 
         	  
-        	  JSONObject objAddressList=objWalletSet.getJSONObject("addresses");
+        	  JSONObject objAddressList=mObjWalletSet.getJSONObject("addresses");
         	  
         	  Iterator iterator = objAddressList.keys();
         	  while(iterator.hasNext()){
@@ -87,7 +88,7 @@ public class BitcoinWallet  {
           statusMessage = Language.getLangLabel("Creating new wallet file"); 
           Log.d("BitcoinWallet",statusMessage);
           
-          objWalletSet.put("encrypted",false);
+          mObjWalletSet.put("encrypted",false);
           //generateNewAddress();
         }
             
@@ -97,6 +98,41 @@ public class BitcoinWallet  {
         //System.exit(-1);
       }
     
+  }
+  
+  public static boolean restoreBackupData( String data  ) {
+	  try{
+		  JSONObject tmpObjWalletSet=new JSONObject(data); 
+    	  if(! tmpObjWalletSet.has("addresses"))
+    		  return false;
+    	  mObjWalletSet=tmpObjWalletSet;
+    	  saveWallet();
+    	  init( mMainActivity );
+    	  return true;
+	  } catch (Exception e) {
+        Log.d("BitcoinWallet","RestoreBackupData failed: "+e.toString());
+        //e.printStackTrace();
+      }
+	  
+	  return false;
+  }
+  
+  public static String getBackupData(  ) {
+	  return mMainActivity.getPrivateData(mWalletName);
+  }  
+  
+  public static boolean saveWallet() {
+	  try{
+		String wallet_json=mObjWalletSet.toString();
+	    mMainActivity.putPrivateData(mWalletName,wallet_json);
+		return true;
+	  } catch (Exception e) {
+        Log.d("BitcoinWallet","Save failed: "+e.toString());
+        //e.printStackTrace();
+        Toast.makeText( mMainActivity.getWindow().getContext(),"BitcoinWallet save failed:"+e.toString(), Toast.LENGTH_SHORT).show();
+        return false;
+      }
+	  
   }
   
   //在本地钱包里新生成一个新地址
@@ -111,11 +147,11 @@ public class BitcoinWallet  {
     Log.d("BitcoinWallet","Importing private key");
     address = key.toAddress(params).toString();
     Log.d("BitcoinWallet","Importing address "+address);
-    if (wallet.getImportedKeys().contains(key)) {
-      wallet.removeKey(key);
+    if (mWallet.getImportedKeys().contains(key)) {
+    	mWallet.removeKey(key);
     }
     
-    if( wallet.importKey(key) ){
+    if( mWallet.importKey(key) ){
 	    String private_key_wif=key.getPrivateKeyAsWiF(MainNetParams.get());
 	    String pub_key_hex=key.getPublicKeyAsHex();
 	    
@@ -123,26 +159,21 @@ public class BitcoinWallet  {
 	    tmpObjAddress.put("private_key_wif", private_key_wif);
 	    tmpObjAddress.put("pub_key_hex", pub_key_hex);
 	    
-	    JSONObject objAddressList=objWalletSet.optJSONObject("addresses");
+	    JSONObject objAddressList=mObjWalletSet.optJSONObject("addresses");
 	    if(objAddressList==null)
 	    	objAddressList = new JSONObject();
 	    
 	    objAddressList.put(address, tmpObjAddress);
-	    objWalletSet.put("addresses", objAddressList);
-	    objWalletSet.put("default", address);
+	    mObjWalletSet.put("addresses", objAddressList);
 	    
-	    String wallet_json=objWalletSet.toString();
-	    mainActivity.putPrivateData(walletName,wallet_json);
+	    if(!mObjWalletSet.has("default"))
+	    	mObjWalletSet.put("default", address);
 	    
-	    wallet_json=mainActivity.getPrivateData(walletName);
-	    Log.d("BitcoinWallet","Saved wallet_json="+wallet_json);
-	    
+	    saveWallet();
 	    return address;
     }else{
     	return null;    
     }
-
-    
   }
   
   public static String importPrivateKey(String privateKey) throws Exception {
@@ -166,10 +197,10 @@ public class BitcoinWallet  {
         odin_tx_data.amount_satoshi,
         odin_tx_data.fee_satoshi,
         odin_tx_data.mark_hex,
-        new String( Util.hexStringToBytes(odin_tx_data.data_hex) )
+        Util.hexStringToBytes(odin_tx_data.data_hex )
       );
   }
-  public static Transaction transaction(String source, String destination, BigInteger amount_satoshi, BigInteger fee, String markPubkeyHexStr,String dataString) throws Exception {
+  public static Transaction transaction(String source, String destination, BigInteger amount_satoshi, BigInteger fee, String markPubkeyHexStr,byte[] data) throws Exception {
     Transaction tx = new Transaction(params);
 
     if (!destination.equals("") && amount_satoshi.compareTo(BigInteger.valueOf(Config.dustSize))<0) {
@@ -177,13 +208,8 @@ public class BitcoinWallet  {
       return tx;
     }
 
-    byte[] data = null;
-    List<Byte> dataArrayList = new ArrayList<Byte>();
-    try {
-      data = dataString.getBytes(Config.BINARY_DATA_CHARSET);
-      dataArrayList = Util.toByteArrayList(data);
-    } catch (UnsupportedEncodingException e) {
-    }
+    List<Byte> dataArrayList =  Util.toByteArrayList(data);
+
 
     int odin_data_length = dataArrayList.size();
 
@@ -200,7 +226,7 @@ public class BitcoinWallet  {
 
     ECKey source_key=null; 
 
-    for (ECKey key : wallet.getImportedKeys()) {
+    for (ECKey key : mWallet.getImportedKeys()) {
         try {
           if (key.toAddress(params).equals(new Address(params, source))) {
             source_key=key;
@@ -214,41 +240,45 @@ public class BitcoinWallet  {
     if(null==source_key)
        return null;
 
-    //组织多重交易来嵌入所需存放的数据
+    //组织多重交易和OpReturn来嵌入所需存放的数据
     if(odin_data_length>0){
-      int  max_tx_num = Config.MAX_MULTISIG_TX_NUM;
-      int  max_multisig_n = Config.MAX_N;
-
       int from = 0;
-      for (int tt=0; tt==0 || (tt<max_tx_num && from < odin_data_length - Config.MAX_OP_RETURN_LENGTH);tt++ ) {
-        List<ECKey> keys = new ArrayList<ECKey>();
-        keys.add(source_key);
-        
-        if(tt==0){ //第一条多重交易的第二个公钥固定为指定特征公钥
-          keys.add(new ECKey(null, Util.hexStringToBytes(markPubkeyHexStr)));
-        }
-        
-        for(int mm=keys.size(); 
-            mm<max_multisig_n && ( ( tt==0 && from < odin_data_length ) || ( tt>0 && from < odin_data_length - Config.MAX_OP_RETURN_LENGTH) );
-            mm++,from += Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH){
-          int embed_data_length=Math.min(Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH, odin_data_length-from); 
-          
-          List<Byte> chunk = new ArrayList<Byte>(dataArrayList.subList(from, from+embed_data_length ));
-          
-          byte[] tmp_pub_key=Util.generateValidPubkey(Util.toByteArray(chunk));
-          
-          if(tmp_pub_key==null){
-            throw new Exception("Unable to generate valid pubkey for embedding data["+dataString+"].Please change your request contents!");
-          }
-          
-          keys.add(new ECKey(null,tmp_pub_key));
-        }
-
-        Script script = ScriptBuilder.createMultiSigOutputScript(1, keys);
-        tx.addOutput(Coin.valueOf(BigInteger.valueOf(Config.dustSize).longValue()), script);
-        totalOutput = totalOutput.add(BigInteger.valueOf(Config.dustSize));
-      }
     
+      if(markPubkeyHexStr!=null && markPubkeyHexStr.length()>0) { //如果markPubkeyHexStr参数有效，则表示使用多重签名
+	      int  max_tx_num =  Config.MAX_MULTISIG_TX_NUM ; 
+	      int  max_multisig_n = Config.MAX_N;
+	
+	      
+	      for (int tt=0; tt==0 || (tt<max_tx_num && from < odin_data_length - Config.MAX_OP_RETURN_LENGTH);tt++ ) {
+	        List<ECKey> keys = new ArrayList<ECKey>();
+	        keys.add(source_key);
+	        
+	        if(tt==0){ //第一条多重交易的第二个公钥固定为指定特征公钥
+	          keys.add(new ECKey(null, Util.hexStringToBytes(markPubkeyHexStr)));
+	        }
+	        
+	        for(int mm=keys.size(); 
+	            mm<max_multisig_n && ( ( tt==0 && from < odin_data_length ) || ( tt>0 && from < odin_data_length - Config.MAX_OP_RETURN_LENGTH) );
+	            mm++,from += Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH){
+	          int embed_data_length=Math.min(Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH, odin_data_length-from); 
+	          
+	          List<Byte> chunk = new ArrayList<Byte>(dataArrayList.subList(from, from+embed_data_length ));
+	          
+	          byte[] tmp_pub_key=Util.generateValidPubkey(Util.toByteArray(chunk));
+	          
+	          if(tmp_pub_key==null){
+	            throw new Exception("Unable to generate valid pubkey for embedding data.Please change your request contents!");
+	          }
+	          
+	          keys.add(new ECKey(null,tmp_pub_key));
+	        }
+	
+	        Script script = ScriptBuilder.createMultiSigOutputScript(1, keys);
+	        tx.addOutput(Coin.valueOf(BigInteger.valueOf(Config.dustSize).longValue()), script);
+	        totalOutput = totalOutput.add(BigInteger.valueOf(Config.dustSize));
+	      }
+      }
+      
       //使用op_return对应的备注脚本空间来嵌入剩余ODIN数据
       int last_data_length= odin_data_length-from;
       
@@ -280,7 +310,7 @@ public class BitcoinWallet  {
         if ((script.isSentToAddress() && (totalOutput.compareTo(totalInput)>0 || !atLeastOneRegularInput)) 
           || (script.isSentToMultiSig() && ((usedUnspents<2 && !atLeastOneRegularInput)||(usedUnspents<3 && atLeastOneRegularInput ) || fee.compareTo(BigInteger.valueOf(Config.maxFee))==0 ) )) {
           if(
-               wallet.getTransaction(new Sha256Hash(txHash))==null || wallet.getTransaction(new Sha256Hash(txHash)).getOutput(unspent.vout).isAvailableForSpending() 
+        	   mWallet.getTransaction(new Sha256Hash(txHash))==null || mWallet.getTransaction(new Sha256Hash(txHash)).getOutput(unspent.vout).isAvailableForSpending() 
             ) {
             if (script.isSentToAddress()) {
               atLeastOneRegularInput = true;
@@ -347,14 +377,14 @@ public class BitcoinWallet  {
     return tx;
   }
 
-  public static boolean sendTransaction(String source, String signed_tx_hex) throws Exception {
+  public static String sendTransaction(String source, String signed_tx_hex) throws Exception {
 	  Transaction tx = new Transaction( params , Util.hexStringToBytes(signed_tx_hex));
-	  String result=CommonHttpUtil.getInstance().getContentFromUrl("http://tool.ppkpub.org/odin/broadcast.php?hex="+signed_tx_hex);
+	  String result=CommonHttpUtil.getInstance().getContentFromUrl(Config.PPK_ROOT_ODIN_PARSE_API_URL+"broadcast.php?hex="+signed_tx_hex);
 	  if(result!=null && result.startsWith("OK") ){
-		  cacheLastUnspentTransaction(source,tx); 
-		  return true;
+		  cacheLastUnspentTransaction(source,tx);
+		  return tx.getHashAsString();
 	  }else
-		  return false;
+		  return null;
 	  //return sendTransaction(source, tx);
   }
   
@@ -442,7 +472,7 @@ public class BitcoinWallet  {
 
   //获取当前地址列表 2019-01-15
   public static List<String> getAddresses() {
-    List<ECKey> keys = wallet.getImportedKeys();
+    List<ECKey> keys = mWallet.getImportedKeys();
     List<String> addresses = new ArrayList<String>();
     for(ECKey key : keys) {
       addresses.add(key.toAddress(params).toString());
@@ -452,13 +482,14 @@ public class BitcoinWallet  {
   
   //获得当前使用的BTC地址
   public static String getDefaultAddress() {
-    return objWalletSet.optString("default", null);
+    return mObjWalletSet.optString("default", null);
   }
   
   //设置当前使用的BTC地址
   public static boolean setDefaultAddress(String address) {
 	try {
-		objWalletSet.put("default", address);
+		mObjWalletSet.put("default", address);
+		saveWallet();
 		return true;
 	} catch (JSONException e) {
 		return false;

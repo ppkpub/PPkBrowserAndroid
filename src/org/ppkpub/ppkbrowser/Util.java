@@ -322,19 +322,23 @@ public class Util {
 
        	Integer total_count=tempObject.getJSONObject("data").getInt("total_count");
         Integer pagesize=tempObject.getJSONObject("data").getInt("pagesize");
-        
-        if(total_count>pagesize){
+        JSONArray utxoArray=tempObject.getJSONObject("data").getJSONArray("list");
+
+        if(total_count>pagesize ){
           result = CommonHttpUtil.getInstance().getContentFromUrl( "https://chain.api.btc.com/v3/address/" + address + "/unspent?page="+ 
                             Math.round( Math.ceil((double)total_count/(double)pagesize) ) );
-          tempObject=new JSONObject(result);
+          JSONArray lastArray=(new JSONObject(result)).getJSONObject("data").optJSONArray("list");
+          if(lastArray!=null) {
+	       	  for(int tt=lastArray.length()-1;tt>=0;tt--){
+	       		utxoArray.put( lastArray.get(tt) ); //合并第一页和最后一页的交易列表数组
+	    	  }
+          }
         }
-        
-        JSONArray tempArray=tempObject.getJSONObject("data").getJSONArray("list");
         
         txCounter=0;
         valueCounter=0.0;
-        for(int tt=tempArray.length()-1;tt>=0;tt--){
-            JSONObject item_obj=(JSONObject)tempArray.get(tt);
+        for(int tt=utxoArray.length()-1;tt>=0;tt--){
+            JSONObject item_obj=(JSONObject)utxoArray.get(tt);
             
             UnspentOutput tempUnspentObj=new UnspentOutput();
             
@@ -531,6 +535,13 @@ public class Util {
     return null;
     */
   } 
+  
+  public static String shortAddressView(String address){
+	  if(address==null || address.length()<=15)
+		  return address;
+	  else
+		  return address.substring(0, 8)+"..."+address.substring( address.length()-4 );
+  }
 
   
 }

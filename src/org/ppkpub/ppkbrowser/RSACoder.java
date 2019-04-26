@@ -30,6 +30,9 @@ public abstract class RSACoder extends Coder {
   
     private static final String PUBLIC_KEY = "RSAPublicKey";  
     private static final String PRIVATE_KEY = "RSAPrivateKey";  
+    
+    public static String PEM_PUB_HEAD="-----BEGIN PUBLIC KEY-----";
+    public static String PEM_PUB_END="-----END PUBLIC KEY-----";
   
     /** 
      * 用私钥对信息生成数字签名 
@@ -86,9 +89,12 @@ public abstract class RSACoder extends Coder {
             throws Exception {  
        return verify(data, publicKey, sign,DEFAULT_SIGNATURE_ALGORITHM);
     }
-    
+
     public static boolean verify(byte[] data, String publicKey, String sign,String sign_algo)  
             throws Exception {  
+    	
+    	publicKey=parseValidPubKey(KEY_ALGORITHM,publicKey);
+    	
   
         // 解密由base64编码的公钥  
         byte[] keyBytes = decryptBASE64(publicKey);  
@@ -263,7 +269,7 @@ public abstract class RSACoder extends Coder {
         return keyMap;  
     }  
     
-    
+   
     /** 
      * 提取有效的公钥数据 
      *  

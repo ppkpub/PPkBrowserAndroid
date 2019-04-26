@@ -1,8 +1,12 @@
 package org.ppkpub.ppkbrowser;
 
+import org.json.JSONObject;
+
+import android.widget.Toast;
+
 public class Config {
   //name
-  public static String appName = "PPkBrowserAndroid";
+  public static String appName = "PPk浏览器内测版";
   public static String defaultLang = "EN";
   
   public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://tool.ppkpub.org/odin/";  //解析根标识的服务API
@@ -14,19 +18,21 @@ public class Config {
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY ="";
   */
   public static String PPK_URI_PREFIX = "ppk:";
+  public static String DIDPPK_URI_PREFIX = "did:"+PPK_URI_PREFIX;
   public static String PPK_URI_RESOURCE_MARK="#";
   public static String ppkDefaultHomepage  = "ppk:0/";
   public static String ppkSettingPage      = "about:settings";
+  public static String ppkSettingPageFileURI="file:///android_asset/settings.html";
   
   public static boolean debugKey = false;
   
   public static String  jdbcURL      = null;
-  public static String  proxyURL     = "http://tool.ppkpub.org/odin/proxy.php";
+  public static String  proxyURL     = "http://45.32.19.146/odin/proxy.php";
   
   //version
-  public static Integer majorVersion = 0;
-  public static Integer minorVersion = 3;
-  public static String version = Integer.toString(majorVersion)+"."+Integer.toString(minorVersion);
+  public static Integer majorVersion = 0 ;
+  public static Integer minorVersion = 32 ;
+  public static String  version = Integer.toString(majorVersion)+"."+Integer.toString(minorVersion);
   public static Integer majorVersionDB = 1;
   
   public static String defaultSqliteFile = null;  
@@ -118,6 +124,152 @@ public class Config {
   public static String BINARY_DATA_CHARSET="ISO-8859-1";  //适用原始二进制数据与字符串类型间的转换
   
   //Extension
-  public static String EXT_PEER_WEB="PeerWeb";  //PeerWeb扩展接口对象
+  final public static String EXT_PEER_WEB="PeerWeb";  //PeerWeb扩展接口对象
+  
+  //Local Settings
+  final public static String LOCAL_SET_PASSWORD_SHA256_HEX="password_sha256_hex";
+  
+  private static PPkActivity mMainActivity=null;
+  private static String mDefaultConfigFileName = "default_config";
+  
+  
+  
+  public static void init(PPkActivity main_activity) {
+	mMainActivity=main_activity;
+	  
+    String strTemp;
+    try {
+      strTemp=mMainActivity.getPrivateData(mDefaultConfigFileName);
+      JSONObject obj_config=new JSONObject(strTemp);
 
+      strTemp = obj_config.optString("StandardFeeSatoshi") ;
+      if(strTemp!=null && strTemp.length()>0 )
+    	  ppkStandardDataFee = Integer.parseInt( strTemp );
+      
+      System.out.println("StandardFeeSatoshi:"+ppkStandardDataFee);
+      Toast.makeText( mMainActivity.getWindow().getContext(),"StandardFeeSatoshi:"+ppkStandardDataFee, Toast.LENGTH_SHORT).show();
+      
+    } catch (Exception e) {
+      //System.out.println("Config.loadUserDefined() error:"+ e.toString() );
+      Toast.makeText( mMainActivity.getWindow().getContext(),"Config.loadUserDefined() error:"+ e.toString(), Toast.LENGTH_SHORT).show();
+    }    
+  }
+  
+  public static String getUserDefinedSet(String set_name) {
+    String strTemp=null;
+    try {
+      strTemp=mMainActivity.getPrivateData(mDefaultConfigFileName);
+      JSONObject obj_config=new JSONObject(strTemp);
+
+      strTemp=obj_config.optString(set_name) ;
+    } catch (Exception e) {
+      strTemp = null;
+    }    
+    
+    if(strTemp==null || strTemp.length()==0 ) {
+  	  if("StandardFeeSatoshi".equalsIgnoreCase(set_name)) {
+  		  strTemp=ppkStandardDataFee.toString();
+  	  }
+    }
+    
+    return strTemp;
+  }
+  
+  public static boolean saveUserDefinedSet(String set_name,String set_value) {
+    String strTemp;
+    try {
+      strTemp=mMainActivity.getPrivateData(mDefaultConfigFileName);
+      JSONObject obj_config= ( strTemp!=null && strTemp.length()>0 ) ? new JSONObject(strTemp): new JSONObject() ;
+
+      obj_config.put(set_name ,set_value) ;
+      //Toast.makeText( mMainActivity.getWindow().getContext(),"Save "+set_name+":"+set_value, Toast.LENGTH_SHORT).show();
+      
+      return mMainActivity.putPrivateData(mDefaultConfigFileName,obj_config.toString());
+    } catch (Exception e) {
+      //System.out.println("Config.loadUserDefined() error:"+ e.toString() );
+      Toast.makeText( mMainActivity.getWindow().getContext(),"Config.loadUserDefined() error:"+ e.toString(), Toast.LENGTH_SHORT).show();
+      return false;
+    }    
+  }
+  
+  
+  public static boolean setWalletProtectPassword( byte[] password ) {
+	  if(password==null || password.length==0) {
+		  return false;
+	  }
+	  try {
+		byte[] password_sha256 =  Coder.encryptSHA256(password);
+		
+		return saveUserDefinedSet(LOCAL_SET_PASSWORD_SHA256_HEX, Util.bytesToHexString(password_sha256));
+
+	  } catch (Exception e) {
+		// TODO Auto-generated catch block
+		return false;
+	  }
+  }
+  
+  public static boolean isWalletPasswordProtected(  ) {
+	  String tmpstr = getUserDefinedSet( LOCAL_SET_PASSWORD_SHA256_HEX );
+	  return tmpstr!=null && tmpstr.length()>0 ;
+  }
+  
+  //备份本应用的隐私数据
+  public static String exportLocalProtectedData( byte[] password ) {
+	  if(password==null || password.length==0) {
+		  return null;
+	  }
+	  
+	  try {
+		  byte[] password_sha256 =  Coder.encryptSHA256(password);
+		  
+		  String existed_password_sha256_hex=getUserDefinedSet( LOCAL_SET_PASSWORD_SHA256_HEX );
+		  
+		  if(existed_password_sha256_hex!=null 
+		     && existed_password_sha256_hex.equalsIgnoreCase(Util.bytesToHexString(password_sha256)) ) {
+			  JSONObject tmpObjLocalPrivateData=new JSONObject();
+			  tmpObjLocalPrivateData.put( BitcoinWallet.mWalletName , BitcoinWallet.getBackupData()) ;
+			  tmpObjLocalPrivateData.put( Odin.mSetFileName , Odin.getBackupData()) ;
+			  tmpObjLocalPrivateData.put( ResourceKey.mResKeyFileName , ResourceKey.getBackupData()) ;
+			  
+			  return tmpObjLocalPrivateData.toString();
+		  }
+	  }catch (Exception e) {
+		  // TODO Auto-generated catch block
+	  }
+	  
+	  return null;
+  }
+
+  //从备份数据恢复
+  public static boolean restoreLocalProtectedData( byte[] password,String strLocalPrivateData ) {
+	  if(password==null || password.length==0) {
+		  return false;
+	  }
+	  
+	  try {
+		  byte[] password_sha256 =  Coder.encryptSHA256(password);
+		  
+		  String existed_password_sha256_hex=getUserDefinedSet( LOCAL_SET_PASSWORD_SHA256_HEX );
+		  
+		  if(existed_password_sha256_hex!=null 
+		     && existed_password_sha256_hex.equalsIgnoreCase(Util.bytesToHexString(password_sha256)) ) {
+			  JSONObject tmpObjLocalPrivateData=new JSONObject(strLocalPrivateData);
+			  if(tmpObjLocalPrivateData.has( BitcoinWallet.mWalletName)) {
+				  BitcoinWallet.restoreBackupData(tmpObjLocalPrivateData.optString( BitcoinWallet.mWalletName)) ;
+			  }
+			  if(tmpObjLocalPrivateData.has( Odin.mSetFileName)) {
+				  Odin.restoreBackupData(tmpObjLocalPrivateData.optString( Odin.mSetFileName)) ;
+			  }
+			  if(tmpObjLocalPrivateData.has( ResourceKey.mResKeyFileName)) {
+				  ResourceKey.restoreBackupData(tmpObjLocalPrivateData.optString( ResourceKey.mResKeyFileName)) ;
+			  }
+			  
+			  return true;
+		  }
+	  }catch (Exception e) {
+		  // TODO Auto-generated catch block
+	  }
+	  
+	  return false;
+  }
 }
