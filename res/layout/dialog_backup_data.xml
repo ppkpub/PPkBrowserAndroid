@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/backup_data_password_label"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="请输入数据保护密码进行验证："
+        android:gravity="left"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <EditText
+        android:id="@+id/backup_data_password"
+        android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:inputType="textPassword"
+	    android:hint="请输入密码"
+        android:scrollHorizontally="true" />
+    
+    <TextView
+        android:id="@+id/backup_data_warningMessage"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dip"
+        android:layout_marginRight="20dip"
+        android:gravity="center_horizontal"
+        android:text=""
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <Button
+	        android:id="@+id/backup_data_btnExport"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="5"
+	        android:text="导出备份" />
+        <Button
+	        android:id="@+id/backup_data_btnRestore"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="5"
+	        android:text="从备份恢复" />
+    </LinearLayout>
+    <TextView
+        android:id="@+id/backup_data_label"
+        android:layout_height="fill_parent"
+        android:layout_width="wrap_content"
+        android:text=" 输出或要导入的数据正文："
+        android:gravity="left"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+	    <EditText
+        android:id="@+id/backup_data_content"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="                                                                              "
+        android:maxLines="5"
+        android:layout_weight="9"
+        android:inputType="none"
+	    android:editable="false"
+	    android:textIsSelectable="false" 
+        android:scrollHorizontally="true" />
+
+	    <LinearLayout
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:orientation="vertical" >
+	        <Button
+		        android:id="@+id/backup_data_btnCopy"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_weight="5"
+		        android:text="复制" />
+	        <Button
+		        android:id="@+id/backup_data_btnPaste"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_weight="5"
+		        android:text="粘贴" />
+		</LinearLayout>
+    </LinearLayout>
+    
+</LinearLayout>

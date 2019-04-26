@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+   
+    <TextView
+        android:id="@+id/setkey_algo_type"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="算法： RSA"
+        android:gravity="left"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+	<TextView
+        android:id="@+id/setkey_pubkey_label"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="公钥："
+        android:gravity="left"
+        android:inputType="none"
+        android:editable="false"
+        android:textIsSelectable="false" 
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    <EditText
+        android:id="@+id/setkey_pubkey"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="3"
+        android:inputType="none"
+	    android:editable="false"
+	    android:textIsSelectable="false" 
+        android:scrollHorizontally="true" />
+    
+    <TextView
+        android:id="@+id/setkey_prvkey_label"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="私钥："
+        android:gravity="left"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+	    <EditText
+        android:id="@+id/setkey_prvkey"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="5"
+        android:layout_weight="9"
+        android:inputType="none"
+	    android:editable="false"
+	    android:textIsSelectable="false" 
+        android:scrollHorizontally="true" />
+
+	    <LinearLayout
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:orientation="vertical" >
+	        <Button
+		        android:id="@+id/setkey_btnCopyPrvkey"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_weight="5"
+		        android:text="复制" />
+	        <Button
+		        android:id="@+id/setkey_btnPastePrvkey"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_weight="5"
+		        android:text="粘贴" />
+		</LinearLayout>
+    </LinearLayout>
+    
+
+</LinearLayout>
