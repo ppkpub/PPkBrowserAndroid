@@ -3,7 +3,6 @@ package org.ppkpub.ppkbrowser;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,13 +11,12 @@ import org.bitcoinj.params.MainNetParams;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.karics.library.zxing.android.CaptureActivity;
+
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
@@ -27,21 +25,19 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.telephony.TelephonyManager;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
-import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
-import android.webkit.WebChromeClient;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebResourceResponse;
 //import android.webkit.WebResourceRequest;
@@ -49,10 +45,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import net.i2p.crypto.eddsa.math.GroupElement;
-import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec;
-import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
-import net.i2p.crypto.eddsa.spec.EdDSAPrivateKeySpec;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -70,6 +62,7 @@ public class PPkActivity extends Activity
     private MyWebView	webshow;
     private MyWebChromeClient mWebChromeClient;
     private ImageButton buttonGo;
+    private ImageButton buttonScan;
     private ImageButton buttonBack;
     private ImageButton buttonForward;
     private ImageButton buttonStop;
@@ -79,9 +72,13 @@ public class PPkActivity extends Activity
     private ProgressBar progressBar;
     private boolean     bLoadingHttpPage;
     
-    private ImageButton buttonHongBao; //金猪特别版
+    private ImageButton buttonStar; //最新动态按钮
     
     private TextView    textStatus;
+    
+    private UpdateInfoService updateInfoService; //版本更新检查
+    
+    private static final int REQUEST_CODE_SCAN = 0x0000;
 
     
     //private OdinTransctionData    	objOdinTransctionData; //暂存奥丁号相关交易数据，用于JS与Android间的交互
@@ -159,6 +156,17 @@ public class PPkActivity extends Activity
         };
         webshow.setWebChromeClient(mWebChromeClient);
         
+        webshow.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+                //调用系统浏览器处理下载事件
+            	Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.addCategory(Intent.CATEGORY_BROWSABLE);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
+            }
+        });
+        
         //gotoURI( Config.ppkDefaultHomepage );
         gotoURI("ppk:joy/"); //金猪红包特别版
         
@@ -171,6 +179,18 @@ public class PPkActivity extends Activity
                 String url = weburl.getText().toString();
                 Log.d("browser", "url:" + url);
                 gotoURI( url );
+            }
+        });
+        
+        buttonScan = (ImageButton) findViewById(R.id.buttonScan);
+        buttonScan.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+            	Intent intent = new Intent(PPkActivity.this,
+						CaptureActivity.class);
+				startActivityForResult(intent, REQUEST_CODE_SCAN);
             }
         });
         
@@ -242,8 +262,8 @@ public class PPkActivity extends Activity
             }
         });
         
-        buttonHongBao = (ImageButton) findViewById(R.id.buttonHongBao);
-        buttonHongBao.setOnClickListener(new View.OnClickListener()
+        buttonStar = (ImageButton) findViewById(R.id.buttonStar);
+        buttonStar.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
@@ -256,7 +276,39 @@ public class PPkActivity extends Activity
         if(!Config.isWalletPasswordProtected()) {
         	setLocalDataProtectedPassword();
         }
+        
+        //检查新版本
+        checkUpdate();
     }
+    
+    
+    private void checkUpdate() {
+	    Toast.makeText(PPkActivity.this, "自动检查更新版本...", Toast.LENGTH_SHORT).show();
+	    
+	    new Thread() {
+	        public void run() {
+	            try {
+	            	updateInfoService = new UpdateInfoService( );
+	                updateInfoService.refreshUpdateInfo();
+	                //Toast.makeText(UpdateActivity.this, "updateinfo:"+info, Toast.LENGTH_SHORT).show();
+	                handlerUpdateService.sendEmptyMessage(0);
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    }.start();
+	}
+    
+    @SuppressLint("HandlerLeak")
+	private Handler handlerUpdateService = new Handler() {
+	    public void handleMessage(Message msg) {
+	        if (updateInfoService.isNeedUpdate()) {
+            	Intent intent = new Intent(PPkActivity.this,
+						UpdateActivity.class);
+				startActivityForResult(intent, REQUEST_CODE_SCAN);
+	        }
+	    }
+	};
     
     public WebView getCurrentWebview() {
     	return webshow;
@@ -266,8 +318,30 @@ public class PPkActivity extends Activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode,Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        mWebChromeClient.onActivityResult(requestCode, resultCode,intent);
-    }
+        // 扫描二维码/条码回传
+ 		if (requestCode == REQUEST_CODE_SCAN && resultCode == RESULT_OK) {
+ 			if (intent != null) {
+
+ 				String content = intent.getStringExtra("codedContent");
+
+ 				//Toast.makeText(webshow.getContext(), "扫码结果： " + content , 0).show();
+ 				gotoURI(content);
+ 				
+ 				/*
+ 				//调用签名确认
+ 				String user_odin_uri=Odin.getDefaultOdinURI();
+ 				String login_confirm_url=content;
+ 				signWithPPkResourcePrvKey(
+ 					user_odin_uri,
+ 					login_confirm_url,
+ 					Util.bytesToHexString(login_confirm_url.getBytes()),
+ 					null
+ 				  );*/
+ 			}
+ 		}else {
+ 			mWebChromeClient.onActivityResult(requestCode, resultCode,intent);
+ 		}
+ 	}
     
     //避免 WebView 的内存泄露问题
     @Override
@@ -780,7 +854,7 @@ public class PPkActivity extends Activity
         	final View DialogView = factory.inflate(R.layout.dialog_set_local_password  , null);
         	
 			dialog = new AlertDialog.Builder(this)
-			    .setTitle("新版本升级提示")
+			    .setTitle("提示")
 			    .setView(DialogView)//设置自定义对话框的样式
 				.setPositiveButton("确定", null)
 				.create();
@@ -1181,7 +1255,7 @@ public class PPkActivity extends Activity
 	            	String result_sign = txtSetPrvkey.getText().toString() ;
 	            	if(result_sign.length()>0) {
 		            	dialog.dismiss();
-				    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_SIGN_WITH_PPK_RESOURCE_PRVKEY ).execute(ppk_uri,result_sign,tmp_sign_algo,callback_function);
+		    	        new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_SIGN_WITH_PPK_RESOURCE_PRVKEY ).execute(ppk_uri,result_sign,tmp_sign_algo,callback_function);
 	            	}else {
 	            		Toast.makeText(v.getContext(), "签名无效，请检查后重试！",Toast.LENGTH_SHORT)
 	                     .show();
@@ -1328,6 +1402,9 @@ public class PPkActivity extends Activity
     }
     
     public void gotoURI(String destURI){
+    	if(destURI==null)
+    		return;
+    	
     	destURI=destURI.trim();
         weburl.setText(destURI);
         weburl.setTextColor(Color.BLACK);
@@ -1343,19 +1420,28 @@ public class PPkActivity extends Activity
         		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
         		webshow.loadUrl(destURI);
             }else {
-            	if(destURI.toLowerCase().startsWith( "file:" )) {
+            	if(destURI.toLowerCase().startsWith( "http:" )
+            			|| destURI.toLowerCase().startsWith( "https:" )) {
+            		//普通网页允许执行JS
+            		webshow.getSettings().setJavaScriptEnabled(true);  
+            		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+            		
+            		webshow.loadUrl(destURI);
+            	}else if(destURI.toLowerCase().startsWith( "file:" )) {
 	            	if(destURI.equalsIgnoreCase( Config.ppkSettingPageFileURI )) { //安全起见，对特定的file:起始网址才允许JS
 	            		webshow.getSettings().setJavaScriptEnabled(true);
 	            		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
 	            	}else {
 	            		webshow.getSettings().setJavaScriptEnabled(false);
 	            	}
+	            	
+	            	webshow.loadUrl(destURI);
             	}else {
-            		webshow.getSettings().setJavaScriptEnabled(true);
-            		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+            		//安全起见，非指定网页类型不允许JS和访问
+            		webshow.getSettings().setJavaScriptEnabled(false); 
+            		String str_info =  destURI.replace("<", "&lt;").replace(">", "&gt;"); //过滤 html敏感字符后显示网址作为正文
+                    webshow.loadDataWithBaseURL(null, str_info, "text/html", "utf-8", null);
             	}
-            	
-            	webshow.loadUrl(destURI);
             }
         }
     }

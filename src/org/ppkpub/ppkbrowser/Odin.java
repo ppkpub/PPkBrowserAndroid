@@ -149,7 +149,7 @@ public class Odin {
     	mObjOdinSet=new JSONObject();
     	
     	String  odin_json=mMainActivity.getPrivateData(mSetFileName);
-    	Log.d("BitcoinWallet","odin_json="+odin_json);
+    	Log.d("ODIN","odin_json="+odin_json);
         if (odin_json!=null && odin_json.length()>0 ) {
           statusMessage = Language.getLangLabel("Found odin setting data"); 
           Log.d("Odin",statusMessage);

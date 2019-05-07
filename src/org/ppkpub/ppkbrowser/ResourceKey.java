@@ -25,10 +25,14 @@ public class ResourceKey  {
 	  try {
 	    mObjResKeySet=new JSONObject();
 	    String str_json=mMainActivity.getPrivateData(mResKeyFileName);
-	    mObjResKeySet=new JSONObject(str_json); 
+	    if(str_json!=null )
+	    	mObjResKeySet=new JSONObject(str_json); 
+	    else
+	    	mObjResKeySet=new JSONObject();
 	  } catch (Exception e) {
         Log.d("ResourceKey","Init failed: "+e.toString());
         //e.printStackTrace();
+        mObjResKeySet=new JSONObject();
       }	
   }
   

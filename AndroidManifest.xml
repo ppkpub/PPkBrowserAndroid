@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.ppkpub.ppkbrowser"
     android:versionCode="1"
-    android:versionName="0.3.2" >
+    android:versionName="0.3.3" >
 
     <uses-sdk
         android:minSdkVersion="19"
@@ -10,7 +10,16 @@
     
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
     
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    
+    <!--为了安全，暂时不打开对外部存储的访问权限
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    -->    
 
     <application
         android:allowBackup="true"
@@ -26,6 +35,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <activity
+            android:name="com.karics.library.zxing.android.CaptureActivity"
+            android:theme="@android:style/Theme.NoTitleBar"
+            android:screenOrientation="portrait" >
+        </activity>
+        
+        <activity
+            android:name="org.ppkpub.ppkbrowser.UpdateActivity"
+            android:theme="@android:style/Theme.NoTitleBar"
+            android:screenOrientation="portrait" >
+        </activity>
+        
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="org.ppkpub.ppkbrowser.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
     </application>
 
 </manifest>

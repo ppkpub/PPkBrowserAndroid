@@ -2,18 +2,21 @@ package org.ppkpub.ppkbrowser;
 
 import org.json.JSONObject;
 
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.widget.Toast;
 
 public class Config {
   //name
   public static String appName = "PPk浏览器内测版";
-  public static String defaultLang = "EN";
+  //public static String defaultLang = "EN";
   
   public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://tool.ppkpub.org/odin/";  //解析根标识的服务API
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_ALGO ="SHA256withRSA" ;//解析根标识的签名算法
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY ="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDTPD2Kkey5UIgOtlbu/wM8JGiTxNKF6fF4YQPU\r\niSR0tIoJWjqdMwL3AY36nJ2zp1VOzIbZGMrgKJTVu8YrNO2sLLTaaIsjaVk3mYRfCXq1tNbE1tyb\r\nyOORvNrcxlPIYHHT428C/aWm8wZ1MY/Ybru4zEPlMBj/ZHZ9yBYZ3vy4wQIDAQAB\r\n"; //对标识解析结果的验证公钥
   /*
-  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://test.ppkpub.org:8088/"; //备用的根标识的服务API
+  public static String PPK_ROOT_ODIN_PARSE_API_URL  = "http://test.ppkpub.org:8088/"; //备用的根标识解析服务API
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_ALGO ="" ;
   public static String PPK_ROOT_ODIN_PARSE_API_SIGN_PUBKEY ="";
   */
@@ -30,12 +33,17 @@ public class Config {
   public static String  proxyURL     = "http://45.32.19.146/odin/proxy.php";
   
   //version
-  public static Integer majorVersion = 0 ;
-  public static Integer minorVersion = 32 ;
-  public static String  version = Integer.toString(majorVersion)+"."+Integer.toString(minorVersion);
-  public static Integer majorVersionDB = 1;
+  public static String stableVersion = "x.x.x" ;
+  public static String versionUpdateURL = "https://github.com/ppkpub/PPkBrowserAndroid/raw/master/bin/version.json";
   
-  public static String defaultSqliteFile = null;  
+  public static String developeVersion  = ":00" ;
+  public static String developeVersionUpdateURL   = "http://test.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
+
+  public static String version = stableVersion + developeVersion;
+  
+  //public static int majorVersionDB = 1;
+
+  //public static String defaultSqliteFile = null;  
   
   //bitcoin
   public static boolean useDustTX = true;
@@ -136,8 +144,21 @@ public class Config {
   
   public static void init(PPkActivity main_activity) {
 	mMainActivity=main_activity;
-	  
     String strTemp;
+    
+    try {
+        PackageManager packageManager = main_activity.getPackageManager();
+        PackageInfo packageInfo = packageManager.getPackageInfo(
+        		main_activity.getPackageName(), 0);
+        stableVersion = packageInfo.versionName;
+        version = stableVersion + developeVersion;
+        if(developeVersion.length()>0) {
+        	versionUpdateURL=developeVersionUpdateURL;
+        }
+    } catch (NameNotFoundException e) {
+        e.printStackTrace();
+    }
+    
     try {
       strTemp=mMainActivity.getPrivateData(mDefaultConfigFileName);
       JSONObject obj_config=new JSONObject(strTemp);

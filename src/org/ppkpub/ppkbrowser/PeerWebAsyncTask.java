@@ -338,6 +338,10 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 
     @Override
     protected void onPostExecute(JSONObject result) {
+    	
+    	if(js_callback_function==null) //未指定有效回调方法则直接返回
+    		return;
+    	
     	String status=null;
     	JSONObject obj_data=null;
     	

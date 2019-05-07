@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <paths>
+        <cache-path path="" name="localcache" />
+        <external-path path="" name="downloads" />
+    </paths>
+    <!--path：需要临时授权访问的路径（.代表所有路径），属性值不能使用具体的独立文件名，只能是目录名-->
+    <!--name：就是给 path 属性所指定的子目录名称取一个别名，后续生成 content:// URI 时，
+             会使用这个别名代替真实目录名。这样做的目的，是为了提高安全性-->
+
+    <!--外部存储又分为SD卡和扩展卡内存，此处外部存储空间对应为内置SD卡内存-->
+    <!--内部存储，我们称为InternalStorage，外部存储我们称为ExternalStorage-->
+
+    <!--<files-path>：内部存储空间应用私有目录下的 files/ 目录，等同于 Context.getFilesDir() 所获取的目录路径；-->
+    <!--<cache-path>：内部存储空间应用私有目录下的 cache/ 目录，等同于 Context.getCacheDir() 所获取的目录路径；-->
+    <!--<external-path>：外部存储空间根目录，等同于 Environment.getExternalStorageDirectory() 所获取的目录路径；-->
+    <!--<external-files-path>：外部存储空间应用私有目录下的 files/ 目录，等同于 Context.getExternalFilesDir(null) 所获取的目录路径；-->
+    <!--<external-cache-path>：外部存储空间应用私有目录下的 cache/ 目录，等同于 Context.getExternalCacheDir()；-->
+</resources>

@@ -74,6 +74,24 @@
     </div>
   </div>
 </div>
+<!--
+<h3>开放自主的数字资产</h3>
+<div class="row section">
+  <div class="form-group">
+    <label for="ext_asset_odin_uri" class="col-sm-2 control-label">资产奥丁号</label>
+    <div class="col-sm-10" align="right">
+      <input type="text" class="form-control" placeholder="" id="ext_asset_odin_uri" value="ppk:btm/" onfocus="this.select()" onmouseover="this.select()">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="ext_asset_address" class="col-sm-2 control-label">资产地址</label>
+    <div class="col-sm-10" align="right">
+      <input type="text" class="form-control" placeholder="" id="ext_asset_address" value="" readonly onfocus="this.select()" onmouseover="this.select()"> <button type="text" id="ext_asset_summary"  class="btn btn-success" onclick='openExtAssetDetail();'>...</button> <button type="text" id="ext_asset_send"  class="btn btn-success" onclick='sendBTC();' disabled="true" value="">发送</button> <button type="text" id="ext_asset_chnage_address"  class="btn btn-success" onclick='changeExtAssetAddress();' disabled="true" value="">切换其它地址</button>  <button type="text" id="ext_asset_new_address"  class="btn btn-success" onclick='generateExtAssetAddress();'  value="">创建新地址</button> <button type="text"  id="ext_asset_import_prvkey"  class="btn btn-success" onclick='importExtAssetPrivateKey();'  disabled="true">导入新地址</button>
+    </div>
+  </div>
+</div>
+-->
 
 <h3>高级设置</h3>
 <div class="row section">
@@ -262,7 +280,8 @@ function refreshAddressSummary(){
     document.getElementById("btc_address_summary").innerHTML="...";
     document.getElementById("odin_register_num").innerHTML="...";
     document.getElementById("last_register_odin").innerHTML="...";
-    
+    document.getElementById("unconfirmed_tx_count").innerHTML="...";
+
     if(mCurrentAddress.length == 0 ){
         return;
     }
