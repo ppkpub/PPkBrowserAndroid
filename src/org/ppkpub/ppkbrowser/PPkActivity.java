@@ -168,7 +168,7 @@ public class PPkActivity extends Activity
         });
         
         //gotoURI( Config.ppkDefaultHomepage );
-        gotoURI("ppk:joy/"); //金猪红包特别版
+        gotoURI("ppk:joy/"); //缺省显示“精彩推荐”
         
         buttonGo = (ImageButton) findViewById(R.id.buttonGo);
         buttonGo.setOnClickListener(new View.OnClickListener()
@@ -245,7 +245,7 @@ public class PPkActivity extends Activity
             public void onClick(View view)
             {
                 
-                gotoURI(Config.ppkDefaultHomepage) ;
+                gotoURI(Config.getUserDefinedSet("Homepage")) ;
             }
         });
         
@@ -412,7 +412,8 @@ public class PPkActivity extends Activity
     public void getSignedTX(final String coin_name,final String tx_argus_json_hex,final String callback_function){
     	Log.d("browser", "getSignedTX " +coin_name+","+tx_argus_json_hex+","+callback_function);
     	
-    	if("BITCOIN".equalsIgnoreCase(coin_name)){
+    	if(CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name)
+    	|| CoinDefine.COIN_NAME_BITCOINCASH.equalsIgnoreCase(coin_name)){
     		DefaultCancelButtonClickListener cancelButtonClickListener=new DefaultCancelButtonClickListener(callback_function);
         	
         	AlertDialog dialog;
@@ -439,8 +440,11 @@ public class PPkActivity extends Activity
     				.setMessage("无效的交易内容！")
     				.create();
         	}else{
+        		JSONObject obj_coin_def = CoinDefine.getCoinDefine(coin_name);
+        		String coin_label_cn=obj_coin_def.optString("label_cn",coin_name);
+        		String coin_symbol=obj_coin_def.optString("symbol",coin_name);
     			dialog = new AlertDialog.Builder(this)
-    			    .setTitle("确认发送比特币交易吗?")
+    			    .setTitle("确认发送"+coin_label_cn+"交易吗?")
     				.setNegativeButton("取消", cancelButtonClickListener)
     				.setPositiveButton("确定", new OnClickListener() {
     					@Override
@@ -449,12 +453,12 @@ public class PPkActivity extends Activity
     						new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_SIGNED_TX  ).execute(coin_name,tx_argus_json_hex,callback_function);
     					}
     				})
-    				.setMessage("确认发送下述比特币交易吗?"
+    				.setMessage("确认发送下述"+coin_label_cn+"交易吗?"
     				         +"\n发送地址：\n"+source
     						 +"\n目标地址：\n"+destination
-    						 +"\n交易金额："+amount_btc+" BTC"
-    						 +"\n矿工费用："+fee_btc+" BTC"
-    						 +"\n请注意该比特币交易一旦发出，将无法撤销！")
+    						 +"\n交易金额："+amount_btc+" "+ coin_symbol
+    						 +"\n矿工费用："+fee_btc+" "+ coin_symbol
+    						 +"\n请注意该交易一旦发出，将无法撤销！")
     				.create();
         	}
     		dialog.show();
@@ -600,7 +604,7 @@ public class PPkActivity extends Activity
     public void changeAnotherAddress(final String coin_name,final String callback_function){
     	Log.d("browser", "changeAnotherAddress " + coin_name+","+callback_function);
     	
-    	if(!"BITCOIN".equalsIgnoreCase(coin_name)){
+    	if(!CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name)){
     		PeerWebAsyncTask.callbackBeforeExceute(
     				this.webshow,
     				callback_function,
@@ -711,7 +715,7 @@ public class PPkActivity extends Activity
     				PeerWebAsyncTask.STATUS_INVALID_ARGU,
     				"coin_name is empty"
     			);
-    	}else if("BITCOIN".equalsIgnoreCase(coin_name)){
+    	}else if(CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name)){
     		ECKey key = new ECKey();
     		String prv_key=key.getPrivateKeyAsWiF(MainNetParams.get());
     		importPrivateKey(coin_name,prv_key,callback_function);
@@ -889,6 +893,72 @@ public class PPkActivity extends Activity
 		        });
     	 }
     }
+    
+    public void verifyLocalDataProtectedPassword(final View.OnClickListener passedListener){
+    	Log.d("browser", "verifyLocalDataProtectedPassword " );
+    	
+    	final AlertDialog dialog;
+    	DefaultCancelButtonClickListener cancelButtonClickListener=new DefaultCancelButtonClickListener(null);
+
+    	if(!Config.isWalletPasswordProtected() ){
+    		dialog = new AlertDialog.Builder(this)
+			    .setTitle("提示")
+				.setNegativeButton("忽略", null)
+				.setPositiveButton("现在就设置", null)
+				.setMessage("数据保护密码尚未设置，你的钱包私钥、身份密钥等重要数据会有泄漏风险！")
+				.create();
+    		
+    		dialog.show();
+    		
+    		dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(new View.OnClickListener() {
+	            @Override
+	            public void onClick(View v){
+	            	//处理忽略按钮的点击事件
+	            	dialog.dismiss();
+	            	passedListener.onClick(null);
+	            }
+	        });
+    		dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+	            @Override
+	            public void onClick(View v){
+	            	//处理确认按钮的点击事件
+	            	dialog.dismiss();
+	            	setLocalDataProtectedPassword();
+	            }
+	        });
+    	}else{
+    		LayoutInflater factory = LayoutInflater.from(this);
+        	final View DialogView = factory.inflate(R.layout.dialog_verify_data_pwd  , null);
+        	
+			dialog = new AlertDialog.Builder(this)
+			    .setTitle("验证操作权限")
+			    .setView(DialogView)//设置自定义对话框的样式
+			    .setNegativeButton("取消", null)
+				.setPositiveButton("确定", null)
+				.create();
+
+			final EditText txtLocalPassword = (EditText)DialogView.findViewById(R.id.verify_data_password ); 
+			final TextView txtWarningMessage = (TextView)DialogView.findViewById(R.id.verify_data_warningMessage ); 
+			txtWarningMessage.setTextColor(Color.RED);
+			
+			dialog.show();
+			
+			dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+	            @Override
+	            public void onClick(View v){
+	            	//处理确认按钮的点击事件
+	            	String strInputPassword=txtLocalPassword.getText().toString().trim();
+	            	if( Config.verifyWalletProtectPassword( strInputPassword.getBytes() )) {
+	            		dialog.dismiss();
+	            		passedListener.onClick(null);
+		            }else {
+		            	txtWarningMessage.setText("密码不正确，请重新输入！") ;
+		            }
+	            }
+	        });
+    	 }
+    }
+    
     
     @JavascriptInterface
     public void importPrivateKey(final String coin_name,final String prv_key,final String callback_function){
@@ -1079,7 +1149,7 @@ public class PPkActivity extends Activity
     		
     		dialog.show();
     	}else{
-    		JSONObject obj_key = ResourceKey.getKey(ppk_uri,true);
+    		final JSONObject obj_key = ResourceKey.getKey(ppk_uri,true);
     		if(obj_key==null) {
     			dialog = new AlertDialog.Builder(this)
     				    .setTitle("提示")
@@ -1090,8 +1160,8 @@ public class PPkActivity extends Activity
     			dialog.show();
     			
     		}else {
-	    		LayoutInflater factory = LayoutInflater.from(this);
-	        	final View DialogView = factory.inflate(R.layout.dialog_setkey , null);
+    			LayoutInflater factory = LayoutInflater.from(this);
+	        	final View DialogView = factory.inflate(R.layout.dialog_set_reskey , null);
 	        	
 				dialog = new AlertDialog.Builder(this)
 				    .setTitle("查看/设置标识验证密钥")
@@ -1100,85 +1170,95 @@ public class PPkActivity extends Activity
 					.setNegativeButton("取消", cancelButtonClickListener)
 					.setPositiveButton("确定", null)
 					.create();
+				
+	    		verifyLocalDataProtectedPassword(new View.OnClickListener() {
+		            @Override
+		            public void onClick(View v){
+		            	//数据密码验证通过后的处理
+		            	//设置资源密钥
+
+	    				final EditText txtSetPubkey = (EditText)DialogView.findViewById(R.id.setkey_pubkey ); 
+	    				final EditText txtSetPrvkey = (EditText)DialogView.findViewById(R.id.setkey_prvkey ); 
 	
-				final EditText txtSetPubkey = (EditText)DialogView.findViewById(R.id.setkey_pubkey ); 
-				final EditText txtSetPrvkey = (EditText)DialogView.findViewById(R.id.setkey_prvkey ); 
-
-				txtSetPubkey.setText( obj_key.optString(ResourceKey.PUBLIC_KEY , "") );
-				txtSetPrvkey.setText( obj_key.optString(ResourceKey.PRIVATE_KEY , "") );
-				
-				dialog.show();
-				
-				dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-		            @Override
-		            public void onClick(View v){
-		            	//处理确认按钮的点击事件
-		            	//保存密钥
-		            	String pub_key = txtSetPubkey.getText().toString() ;
-	    				String prv_key = txtSetPrvkey.getText().toString() ;
-
-		            	ResourceKey.saveKey(ppk_uri, prv_key,pub_key,ResourceKey.DEFAULT_ALGO_TYPE_RSA);
-		            	
-		            	dialog.dismiss();
-				    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_SET_PPK_RESOURCE_KEY ).execute(ppk_uri,pub_key,callback_function);
-		            }
-		        });
-				
-				( (Button)DialogView.findViewById(R.id.setkey_btnCopyPrvkey ) ).setOnClickListener(new View.OnClickListener() {
-		            @Override
-		            public void onClick(View v){
-		            	try {
-		    				String pub_key = txtSetPubkey.getText().toString() ;
-		    				String prv_key = txtSetPrvkey.getText().toString() ;
-		    				
-		            		JSONObject new_key=new JSONObject();
-		            		new_key.put("ppk_uri",ppk_uri);
-		            		new_key.put("RSAPublicKey",pub_key);
-							new_key.put("RSAPrivateKey",prv_key);
-		            	
-			            	// Copy the Text to the clipboard
-			                ClipboardManager manager = 
-			                    (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-			                manager.setText( new_key.toString() );
-			                
-			                // Show a message:
-			                Toast.makeText(v.getContext(), "已复制到剪贴板",Toast.LENGTH_SHORT)
-			                     .show();
-		            	} catch (JSONException e) {
-		            		Toast.makeText(v.getContext(), "复制失败",Toast.LENGTH_SHORT)
-		                     .show();
-						}
-		            }
-		        });
-				
-				( (Button)DialogView.findViewById(R.id.setkey_btnPastePrvkey ) ).setOnClickListener(new View.OnClickListener() {
-		            @Override
-		            public void onClick(View v){
-		            	// get the Text from the clipboard
-		                ClipboardManager manager = 
-		                    (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-		                CharSequence tmp_clip = manager.getText();
-		                if(tmp_clip!=null) {
-			                try {
-			                	String new_key_json=tmp_clip.toString() ;
-			                	JSONObject new_key=new JSONObject(new_key_json);
-				                
-				                txtSetPrvkey.setText( new_key.optString("RSAPrivateKey","") );
-				                txtSetPubkey.setText( new_key.optString("RSAPublicKey","")  );
-				                
-				                // Show a message:
-				                Toast.makeText(v.getContext(), "已粘贴成功",Toast.LENGTH_SHORT)
-				                     .show();
-			                }catch(Exception e) {
-			                	txtSetPrvkey.setText( "" );
-				                txtSetPubkey.setText( "" );
-			                	Toast.makeText(v.getContext(), "不合法的密钥",Toast.LENGTH_SHORT)
-			                     .show();
-			                }
-			             }
+	    				txtSetPubkey.setText( obj_key.optString(ResourceKey.PUBLIC_KEY , "") );
+	    				txtSetPrvkey.setText( obj_key.optString(ResourceKey.PRIVATE_KEY , "") );
+	    				
+	    				dialog.show();
+	    				
+	    				dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+	    		            @Override
+	    		            public void onClick(View v){
+	    		            	//处理确认按钮的点击事件
+	    		            	//保存密钥
+	    		            	String pub_key = txtSetPubkey.getText().toString() ;
+	    	    				String prv_key = txtSetPrvkey.getText().toString() ;
+	
+	    		            	ResourceKey.saveKey(ppk_uri, prv_key,pub_key,ResourceKey.DEFAULT_ALGO_TYPE_RSA);
+	    		            	
+	    		            	dialog.dismiss();
+	    				    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_SET_PPK_RESOURCE_KEY ).execute(ppk_uri,pub_key,callback_function);
+	    		            }
+	    		        });
+	    				
+	    				( (Button)DialogView.findViewById(R.id.setkey_btnCopyPrvkey ) ).setOnClickListener(new View.OnClickListener() {
+	    		            @Override
+	    		            public void onClick(View v){
+	    		            	try {
+	    		    				String pub_key = txtSetPubkey.getText().toString() ;
+	    		    				String prv_key = txtSetPrvkey.getText().toString() ;
+	    		    				
+	    		            		JSONObject new_key=new JSONObject();
+	    		            		new_key.put("ppk_uri",ppk_uri);
+	    		            		new_key.put("RSAPublicKey",pub_key);
+	    							new_key.put("RSAPrivateKey",prv_key);
+	    		            	
+	    			            	// Copy the Text to the clipboard
+	    			                ClipboardManager manager = 
+	    			                    (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+	    			                manager.setText( new_key.toString() );
+	    			                
+	    			                // Show a message:
+	    			                Toast.makeText(v.getContext(), "已复制到剪贴板",Toast.LENGTH_SHORT)
+	    			                     .show();
+	    		            	} catch (JSONException e) {
+	    		            		Toast.makeText(v.getContext(), "复制失败",Toast.LENGTH_SHORT)
+	    		                     .show();
+	    						}
+	    		            }
+	    		        });
+	    				
+	    				( (Button)DialogView.findViewById(R.id.setkey_btnPastePrvkey ) ).setOnClickListener(new View.OnClickListener() {
+	    		            @Override
+	    		            public void onClick(View v){
+	    		            	// get the Text from the clipboard
+	    		                ClipboardManager manager = 
+	    		                    (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+	    		                CharSequence tmp_clip = manager.getText();
+	    		                if(tmp_clip!=null) {
+	    			                try {
+	    			                	String new_key_json=tmp_clip.toString() ;
+	    			                	JSONObject new_key=new JSONObject(new_key_json);
+	    				                
+	    				                txtSetPrvkey.setText( new_key.optString("RSAPrivateKey","") );
+	    				                txtSetPubkey.setText( new_key.optString("RSAPublicKey","")  );
+	    				                
+	    				                // Show a message:
+	    				                Toast.makeText(v.getContext(), "已粘贴成功",Toast.LENGTH_SHORT)
+	    				                     .show();
+	    			                }catch(Exception e) {
+	    			                	txtSetPrvkey.setText( "" );
+	    				                txtSetPubkey.setText( "" );
+	    			                	Toast.makeText(v.getContext(), "不合法的密钥",Toast.LENGTH_SHORT)
+	    			                     .show();
+	    			                }
+	    			             }
+	    		            }
+	    		        });
+	        		
 		            }
 		        });
     		}
+    		
     	}
     }
     
@@ -1224,7 +1304,7 @@ public class PPkActivity extends Activity
 			}
 			
 			LayoutInflater factory = LayoutInflater.from(this);
-        	final View DialogView = factory.inflate(R.layout.dialog_setkey , null);
+        	final View DialogView = factory.inflate(R.layout.dialog_set_reskey , null);
         	
 			dialog = new AlertDialog.Builder(this)
 			    .setTitle("按资源标识生成签名")
@@ -1406,6 +1486,15 @@ public class PPkActivity extends Activity
     		return;
     	
     	destURI=destURI.trim();
+    	
+    	//处理完善destURI，自动补上缺少的 ppk:或http:前缀
+    	if(!destURI.contains(":")) {
+    		if(destURI.contains(".") && !Util.isNumeric(destURI) )
+    			destURI = "http://"+destURI;
+    	    else
+    		    destURI = "ppk:"+destURI;
+    	}
+    	
         weburl.setText(destURI);
         weburl.setTextColor(Color.BLACK);
         textStatus.setText("Go to "+destURI);
