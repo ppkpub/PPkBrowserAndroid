@@ -76,7 +76,8 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    	if(mTaskName==TASK_NAME_GET_DEFAULT_ADDRESS){
 	    		String coin_name=params[0];
 		    	js_callback_function=params[1];
-		    	if( "BITCOIN".equalsIgnoreCase(coin_name) ){
+		    	if( CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name)
+		    	    ||  CoinDefine.COIN_NAME_BITCOINCASH.equalsIgnoreCase(coin_name)){
 		    		String address=BitcoinWallet.getDefaultAddress();
 		    		return address==null? 
 		    				genRespError(STATUS_ADDRESS_NOT_EXIST,"No default address") :  genRespOK("address",address);
@@ -215,8 +216,12 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    		String coin_name=params[0];
 	    		String address=params[1];
 		    	js_callback_function=params[2];
-		    	if( "BITCOIN".equalsIgnoreCase(coin_name) ){
+		    	if( CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name) ){
 		    		JSONObject tmp_obj=BitcoinWallet.getAddressSummary(address);
+		    		return tmp_obj==null? 
+		    				genRespError(STATUS_UNKOWN_EXCEPTION,"Unkown error") :  genRespOK(tmp_obj);
+		    	}else if( CoinDefine.COIN_NAME_BITCOINCASH.equalsIgnoreCase(coin_name) ){
+		    		JSONObject tmp_obj=BitcoinWallet.getBchAddressSummary(address);
 		    		return tmp_obj==null? 
 		    				genRespError(STATUS_UNKOWN_EXCEPTION,"Unkown error") :  genRespOK(tmp_obj);
 		    	}else{
@@ -231,7 +236,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    	}else if(mTaskName==TASK_NAME_GET_ADDRESS_LIST){
 	    		String coin_name=params[0];
 		    	js_callback_function=params[1];
-		    	if( "BITCOIN".equalsIgnoreCase(coin_name) ){
+		    	if( COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name) ){
 		    		List<String> address_list=BitcoinWallet.getAddresses();
 		    		if(address_list==null) 
 		    			return genRespError(STATUS_UNKOWN_EXCEPTION,"Unkown error");
@@ -247,7 +252,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    		String coin_name=params[0];
 	    		String prv_key=params[1];
 		    	js_callback_function=params[2];
-		    	if( "BITCOIN".equalsIgnoreCase(coin_name) ){
+		    	if( CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name) ){
 		    		String address=BitcoinWallet.importPrivateKey(prv_key);
 		    		return address==null? 
 		    				genRespError(STATUS_UNKOWN_EXCEPTION,"Unkown error") :  genRespOK("address",address);
@@ -265,6 +270,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 					Log.d("PeerWebAsyncTask", "signed_tx_hex=" + signed_tx_hex);
 					return genRespOK("signed_tx_hex",signed_tx_hex);
 		    	} catch (Exception e) {
+		    		e.printStackTrace();
 	        		return genRespError(STATUS_UNKOWN_EXCEPTION,e.toString());
 				}  
 	    	}else if(mTaskName==TASK_NAME_GET_SIGNED_TX){
@@ -295,10 +301,12 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 					    	        amount_satoshi,
 					    	        fee_satoshi,
 					    	        "",
-					    	        data
+					    	        data,
+					    	        CoinDefine.COIN_NAME_BITCOINCASH.equalsIgnoreCase(coin_name)
 					    	      );
 			        signed_tx_hex=Util.bytesToHexString( tx.bitcoinSerialize() );
 	        	} catch (Exception e) {
+	        		e.printStackTrace();
 	        		return	genRespError(STATUS_UNKOWN_EXCEPTION,e.toString());
 				}  
 	        	Log.d("PeerWebAsyncTask", "signed_tx_hex=" + signed_tx_hex);
@@ -313,8 +321,10 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 				try{
 					String send_result_txid=null;
 					
-					if( "BITCOIN".equalsIgnoreCase(coin_name) ){
+					if( CoinDefine.COIN_NAME_BITCOIN.equalsIgnoreCase(coin_name) ){
 						send_result_txid=BitcoinWallet.sendTransaction(source, signed_tx_hex);
+					}else if( CoinDefine.COIN_NAME_BITCOINCASH.equalsIgnoreCase(coin_name) ){
+						send_result_txid=BitcoinWallet.sendBchTransaction(source, signed_tx_hex);
 					}else{
 			    		return genRespError(STATUS_INVALID_ARGU,"Not supported coin:"+coin_name); 
 			    	}

@@ -30,14 +30,15 @@ public class Config {
   public static boolean debugKey = false;
   
   public static String  jdbcURL      = null;
-  public static String  proxyURL     = "http://45.32.19.146/odin/proxy.php";
+  public static String  proxyURL     = "http://tool.ppkpub.org/odin/proxy.php";
   
   //version
   public static String stableVersion = "x.x.x" ;
   public static String versionUpdateURL = "https://github.com/ppkpub/PPkBrowserAndroid/raw/master/bin/version.json";
   
-  public static String developeVersion  = ":00" ;
-  public static String developeVersionUpdateURL   = "http://test.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
+  public static String developeVersion  = "" ;
+  public static String developeVersionUpdateURL   = "http://tool.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
+  //public static String developeVersionUpdateURL   = "http://192.168.62.99:8081/autoupdate/ppkbrowser/version_local.json";
 
   public static String version = stableVersion + developeVersion;
   
@@ -77,7 +78,7 @@ public class Config {
   public static int MAX_MULTISIG_TX_NUM = 2; //一条交易里能支持的最大数量多重签名输出条目，建议设为2，如果过大可能会被比特币网络拒绝
   public static int MAX_N = 3;   //多重签名1-OF-N中的参数N最大数量，建议设为3，如果过大可能会被比特币网络拒绝
   public static int MAX_OP_RETURN_LENGTH = 75; //OP_RETURN能存放数据的最大字节数
-  public static int MAX_ODIN_DATA_LENGTH=(MAX_N-2)*PPK_PUBKEY_EMBED_DATA_MAX_LENGTH+(MAX_N-1)*PPK_PUBKEY_EMBED_DATA_MAX_LENGTH*(MAX_MULTISIG_TX_NUM-1)+MAX_OP_RETURN_LENGTH;  //支持嵌入的ODIN数据最大字节数
+  //public static int MAX_ODIN_DATA_LENGTH=(MAX_N-2)*PPK_PUBKEY_EMBED_DATA_MAX_LENGTH+(MAX_N-1)*PPK_PUBKEY_EMBED_DATA_MAX_LENGTH*(MAX_MULTISIG_TX_NUM-1)+MAX_OP_RETURN_LENGTH;  //支持嵌入的ODIN数据最大字节数
   
   
   public static Byte FUNC_ID_ODIN_REGIST='R'; 
@@ -190,7 +191,10 @@ public class Config {
     if(strTemp==null || strTemp.length()==0 ) {
   	  if("StandardFeeSatoshi".equalsIgnoreCase(set_name)) {
   		  strTemp=ppkStandardDataFee.toString();
+  	  }else if("Homepage".equalsIgnoreCase(set_name)) {
+  		  strTemp=ppkDefaultHomepage;
   	  }
+  	  
     }
     
     return strTemp;
@@ -203,7 +207,7 @@ public class Config {
       JSONObject obj_config= ( strTemp!=null && strTemp.length()>0 ) ? new JSONObject(strTemp): new JSONObject() ;
 
       obj_config.put(set_name ,set_value) ;
-      //Toast.makeText( mMainActivity.getWindow().getContext(),"Save "+set_name+":"+set_value, Toast.LENGTH_SHORT).show();
+      Toast.makeText( mMainActivity.getWindow().getContext(),"Save "+set_name+":"+set_value, Toast.LENGTH_SHORT).show();
       
       return mMainActivity.putPrivateData(mDefaultConfigFileName,obj_config.toString());
     } catch (Exception e) {
@@ -234,6 +238,28 @@ public class Config {
 	  return tmpstr!=null && tmpstr.length()>0 ;
   }
   
+  //验证本地保护密码
+  public static boolean verifyWalletProtectPassword( byte[] password ) {
+	  if(password==null || password.length==0) {
+		  return false;
+	  }
+	  
+	  try {
+		  byte[] password_sha256 =  Coder.encryptSHA256(password);
+		  
+		  String existed_password_sha256_hex=getUserDefinedSet( LOCAL_SET_PASSWORD_SHA256_HEX );
+		  
+		  if(existed_password_sha256_hex!=null 
+		     && existed_password_sha256_hex.equalsIgnoreCase(Util.bytesToHexString(password_sha256)) ) {
+			  return true;
+		  }
+	  }catch (Exception e) {
+		  // TODO Auto-generated catch block
+	  }
+	  
+	  return false;
+  }
+  
   //备份本应用的隐私数据
   public static String exportLocalProtectedData( byte[] password ) {
 	  if(password==null || password.length==0) {
@@ -251,6 +277,7 @@ public class Config {
 			  tmpObjLocalPrivateData.put( BitcoinWallet.mWalletName , BitcoinWallet.getBackupData()) ;
 			  tmpObjLocalPrivateData.put( Odin.mSetFileName , Odin.getBackupData()) ;
 			  tmpObjLocalPrivateData.put( ResourceKey.mResKeyFileName , ResourceKey.getBackupData()) ;
+			  //tmpObjLocalPrivateData.put( AssetWallet.mResKeyFileName , AssetWallet.getBackupData()) ;
 			  
 			  return tmpObjLocalPrivateData.toString();
 		  }
@@ -284,6 +311,10 @@ public class Config {
 			  if(tmpObjLocalPrivateData.has( ResourceKey.mResKeyFileName)) {
 				  ResourceKey.restoreBackupData(tmpObjLocalPrivateData.optString( ResourceKey.mResKeyFileName)) ;
 			  }
+			  
+			  //if(tmpObjLocalPrivateData.has( AssetWallet.mResKeyFileName)) {
+			  //  AssetWallet.restoreBackupData(tmpObjLocalPrivateData.optString( AssetWallet.mResKeyFileName)) ;
+			  //}
 			  
 			  return true;
 		  }

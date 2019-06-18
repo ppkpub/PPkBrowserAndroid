@@ -391,6 +391,93 @@ public class Util {
     
     return unspents;
   }
+  
+  //缺省获取指定BCH地址未花费交易的方法，包含多重签名类型的输出
+  public static List<UnspentOutput> getBitcoinCashUnspents(String address) {
+	  List<UnspentOutput> unspents;
+	  
+	  unspents=getBitcoinCashUnspents(address,null);
+	  if(unspents==null){
+		  unspents=getBitcoinCashUnspents(address,Config.proxyURL);
+	  }
+	  return unspents;
+  }
+  
+  public static List<UnspentOutput> getBitcoinCashUnspents(String address,String proxy_url) {
+    //调用API服务来获取可用的未花费交易列表
+    List<UnspentOutput>  unspents=new ArrayList<UnspentOutput> ();
+    int txCounter=0;
+    Double valueCounter=0.0;
+
+    try {
+        String result=null;
+        JSONObject tempObject=null;
+
+        //API服务正常则继续调用查询未花费交易列表
+       	result = CommonHttpUtil.getInstance().getContentFromUrl( "https://bch-chain.api.btc.com/v3/address/" + address + "/unspent",proxy_url );
+       	tempObject=new JSONObject(result);
+
+       	Integer total_count=tempObject.getJSONObject("data").getInt("total_count");
+        Integer pagesize=tempObject.getJSONObject("data").getInt("pagesize");
+        JSONArray utxoArray=tempObject.getJSONObject("data").getJSONArray("list");
+
+        if(total_count>pagesize ){
+          result = CommonHttpUtil.getInstance().getContentFromUrl( "https://bch-chain.api.btc.com/v3/address/" + address + "/unspent?page="+ 
+                            Math.round( Math.ceil((double)total_count/(double)pagesize) ) );
+          JSONArray lastArray=(new JSONObject(result)).getJSONObject("data").optJSONArray("list");
+          if(lastArray!=null) {
+	       	  for(int tt=lastArray.length()-1;tt>=0;tt--){
+	       		utxoArray.put( lastArray.get(tt) ); //合并第一页和最后一页的交易列表数组
+	    	  }
+          }
+        }
+        
+        txCounter=0;
+        valueCounter=0.0;
+        for(int tt=utxoArray.length()-1;tt>=0;tt--){
+            JSONObject item_obj=(JSONObject)utxoArray.get(tt);
+            
+            UnspentOutput tempUnspentObj=new UnspentOutput();
+            
+            tempUnspentObj.amt_satoshi=BigInteger.valueOf(item_obj.getLong("value"));
+            tempUnspentObj.txid=item_obj.getString("tx_hash");
+            tempUnspentObj.vout=item_obj.getInt("tx_output_n");
+            tempUnspentObj.scriptPubKeyHex="";
+            
+            System.out.println("  tempUnspentObj: "+tempUnspentObj.toString());
+            
+
+            try {
+              result = CommonHttpUtil.getInstance().getContentFromUrl( "https://bch-chain.api.btc.com/v3/tx/" + tempUnspentObj.txid + "?verbose=3",proxy_url );
+              //System.out.println("Get https://chain.api.btc.com/v3/tx/" + tempUnspentObj.txid + "?verbose=3\n  result: "+result);
+              JSONObject tempObjectTx=new JSONObject(result);
+              JSONArray tempArrayOutputs=tempObjectTx.getJSONObject("data").getJSONArray("outputs");
+              JSONObject item_output=(JSONObject)tempArrayOutputs.get(tempUnspentObj.vout);
+
+              tempUnspentObj.scriptPubKeyHex=item_output.getString("script_hex");
+            }catch (Exception e2) {
+              Log.d("Util"," getBitcoinCashUnspents() api.btc.com: "+e2.toString());
+            }
+              
+            if(tempUnspentObj.scriptPubKeyHex.length()>0){
+              unspents.add(tempUnspentObj);
+              valueCounter += item_obj.getDouble("value");
+              txCounter ++ ;
+            }
+            
+            if( txCounter>Config.MAX_MULTISIG_TX_NUM+1 
+               && (valueCounter > Config.maxFee || valueCounter >  Config.ppkStandardDataFee + (Config.MAX_MULTISIG_TX_NUM+1) * Config.dustSize))  {  //if enough for max ODIN fee 
+              break;
+            }
+        }
+    } catch (Exception e) {
+      //此API有异常，自动切换到另一个备用API
+      Log.d("Util","getBitcoinCashUnspents() BTC.com API exception:"+e.toString());
+      return null;
+    }
+    
+    return unspents;
+  }
 
   //备用的获取指定地址未花费交易的方法，不包含多重签名类型的输出
   public static List<UnspentOutput> getUnspentsWithoutDustTX(String address) {

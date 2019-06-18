@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.HashMap;
 
+import org.json.JSONArray;
 
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
@@ -200,9 +201,28 @@ public class BitcoinWallet  {
         Util.hexStringToBytes(odin_tx_data.data_hex )
       );
   }
+  
   public static Transaction transaction(String source, String destination, BigInteger amount_satoshi, BigInteger fee, String markPubkeyHexStr,byte[] data) throws Exception {
+	  return transaction(source, destination, amount_satoshi, fee, markPubkeyHexStr,data,false);
+  }
+  
+  public static Transaction transaction(String source, String destination, BigInteger amount_satoshi, BigInteger fee, String markPubkeyHexStr,byte[] data,boolean isBitcoinCash) throws Exception {
     Transaction tx = new Transaction(params);
+    
+    int max_op_return_length=Config.MAX_OP_RETURN_LENGTH;
+    int max_tx_num =  Config.MAX_MULTISIG_TX_NUM ; 
+    int max_multisig_n = Config.MAX_N;
+    int ppk_pubkey_embed_data_max_length=Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH;
+    
+    
+    if(isBitcoinCash) {
+    	//	tx.setVersion(0x40);//for bitcoincash ，不需要设置
+    	max_op_return_length=215;
+    }
 
+    int max_odin_data_length=(max_multisig_n-2)*ppk_pubkey_embed_data_max_length+(max_multisig_n-1)*ppk_pubkey_embed_data_max_length*(max_tx_num-1)+max_op_return_length;  //支持嵌入的ODIN数据最大字节数;
+    
+    
     if (!destination.equals("") && amount_satoshi.compareTo(BigInteger.valueOf(Config.dustSize))<0) {
       tx.verify();
       return tx;
@@ -215,6 +235,8 @@ public class BitcoinWallet  {
 
     BigInteger totalOutput = fee;
     BigInteger totalInput = BigInteger.ZERO;
+    
+    JSONArray arrayInputUnspents=new JSONArray();
 
     try {
       if (!destination.equals("") && amount_satoshi.compareTo(BigInteger.ZERO)>0) {
@@ -245,22 +267,19 @@ public class BitcoinWallet  {
       int from = 0;
     
       if(markPubkeyHexStr!=null && markPubkeyHexStr.length()>0) { //如果markPubkeyHexStr参数有效，则表示使用多重签名
-	      int  max_tx_num =  Config.MAX_MULTISIG_TX_NUM ; 
-	      int  max_multisig_n = Config.MAX_N;
-	
 	      
-	      for (int tt=0; tt==0 || (tt<max_tx_num && from < odin_data_length - Config.MAX_OP_RETURN_LENGTH);tt++ ) {
+	      for (int tt=0; tt==0 || (tt<max_tx_num && from < odin_data_length - max_op_return_length);tt++ ) {
 	        List<ECKey> keys = new ArrayList<ECKey>();
 	        keys.add(source_key);
 	        
 	        if(tt==0){ //第一条多重交易的第二个公钥固定为指定特征公钥
-	          keys.add(new ECKey(null, Util.hexStringToBytes(markPubkeyHexStr)));
+	          keys.add(ECKey.fromPublicOnly(Util.hexStringToBytes(markPubkeyHexStr)));
 	        }
 	        
 	        for(int mm=keys.size(); 
-	            mm<max_multisig_n && ( ( tt==0 && from < odin_data_length ) || ( tt>0 && from < odin_data_length - Config.MAX_OP_RETURN_LENGTH) );
-	            mm++,from += Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH){
-	          int embed_data_length=Math.min(Config.PPK_PUBKEY_EMBED_DATA_MAX_LENGTH, odin_data_length-from); 
+	            mm<max_multisig_n && ( ( tt==0 && from < odin_data_length ) || ( tt>0 && from < odin_data_length - max_op_return_length) );
+	            mm++,from += ppk_pubkey_embed_data_max_length){
+	          int embed_data_length=Math.min(ppk_pubkey_embed_data_max_length, odin_data_length-from); 
 	          
 	          List<Byte> chunk = new ArrayList<Byte>(dataArrayList.subList(from, from+embed_data_length ));
 	          
@@ -282,8 +301,8 @@ public class BitcoinWallet  {
       //使用op_return对应的备注脚本空间来嵌入剩余ODIN数据
       int last_data_length= odin_data_length-from;
       
-      if(last_data_length>Config.MAX_OP_RETURN_LENGTH){
-        throw new Exception("Too big embed data.(Should be less than "+Config.MAX_ODIN_DATA_LENGTH+" bytes)");
+      if(last_data_length>max_op_return_length){
+        throw new Exception("Too big embed data.(Should be less than "+max_odin_data_length+" bytes)");
       }else if( last_data_length>0 ){
         List<Byte> chunk = new ArrayList<Byte>(dataArrayList.subList(from, odin_data_length));
         chunk.add(0,(byte) last_data_length);
@@ -292,7 +311,7 @@ public class BitcoinWallet  {
         tx.addOutput(Coin.valueOf(BigInteger.valueOf(0).longValue()), script);
       }
     }
-    List<UnspentOutput> unspents = Util.getUnspents(source);
+    List<UnspentOutput> unspents = isBitcoinCash? Util.getBitcoinCashUnspents(source):Util.getUnspents(source);
     List<Script> inputScripts = new ArrayList<Script>();      
 
     Boolean atLeastOneRegularInput = false;
@@ -316,13 +335,14 @@ public class BitcoinWallet  {
               atLeastOneRegularInput = true;
             }
 
-            Sha256Hash sha256Hash = new Sha256Hash(txHash);  
+            Sha256Hash sha256Hash =  new Sha256Hash(txHash);  
             TransactionOutPoint txOutPt = new TransactionOutPoint(params, unspent.vout, sha256Hash);
             
             System.out.println("Spending "+sha256Hash+" "+unspent.vout);
             totalInput = totalInput.add(unspent.amt_satoshi);
             TransactionInput input = new TransactionInput(params, tx, new byte[]{}, txOutPt);
             tx.addInput(input);
+            arrayInputUnspents.put(unspent);
             inputScripts.add(script);
           }
         }
@@ -354,9 +374,16 @@ public class BitcoinWallet  {
     }
 
     for (int i = 0; i<tx.getInputs().size(); i++) {
+
       Script script = inputScripts.get(i);
       TransactionInput input = tx.getInput(i);
-      TransactionSignature txSig = tx.calculateSignature(i, source_key, script, SigHash.ALL, false);
+      
+      UnspentOutput unspent=(UnspentOutput)(arrayInputUnspents.get(i));
+
+      TransactionSignature txSig = isBitcoinCash ? 
+    		  tx.calculateWitnessSignature(i, source_key, script, Coin.valueOf(unspent.amt_satoshi.longValue())  , SigHash.ALL, false)
+    		  : tx.calculateSignature(i, source_key, script, SigHash.ALL, false);
+
       if (script.isSentToAddress()) {
         input.setScriptSig(ScriptBuilder.createInputScript(txSig, source_key));
       } else if (script.isSentToMultiSig()) {
@@ -366,22 +393,37 @@ public class BitcoinWallet  {
         builder.data(txSig.encodeToBitcoin());
         input.setScriptSig(builder.build());
       }
+    	
     }
     
     tx.verify();
 
-
-    
-    //Util.exportTextToFile(tx.toString(), "resources/db/last_transaction.log");
-    //System.exit(0);
     return tx;
   }
 
   public static String sendTransaction(String source, String signed_tx_hex) throws Exception {
 	  Transaction tx = new Transaction( params , Util.hexStringToBytes(signed_tx_hex));
 	  String result=CommonHttpUtil.getInstance().getContentFromUrl(Config.PPK_ROOT_ODIN_PARSE_API_URL+"broadcast.php?hex="+signed_tx_hex);
+	  
 	  if(result!=null && result.startsWith("OK") ){
 		  cacheLastUnspentTransaction(source,tx);
+		  return tx.getHashAsString();
+	  }else
+		  return null;
+	  //return sendTransaction(source, tx);
+  }
+  
+  public static String sendBchTransaction(String source, String signed_tx_hex) throws Exception {
+	  Transaction tx = new Transaction( params , Util.hexStringToBytes(signed_tx_hex));
+	  String broadcast_url="https://pool.viabtc.com/res/tools/broadcast";
+	  String post_data="{\"coin\":\"BCH\",\"raw_tx\":\""+signed_tx_hex+"\"}";
+	  //String post_data="{\"mimeType\": \"application/json;charset=UTF-8\",\"text\": \"{\\\"coin\\\":\\\"BCH\\\",\\\"raw_tx\\\":\\\""+signed_tx_hex+"\\\"}\"}";
+	  
+	  System.out.println("broadcast_url="+broadcast_url+"\npost_data="+post_data);
+	  String result=CommonHttpUtil.getInstance().sendPostContent(broadcast_url, post_data, "application/json;")  ;
+	  System.out.println("result="+result);
+	  if(result!=null && result.contains("\"code\": 0") ){
+		  //cacheLastUnspentTransaction(source,tx);
 		  return tx.getHashAsString();
 	  }else
 		  return null;
@@ -513,6 +555,20 @@ public class BitcoinWallet  {
   public static JSONObject getAddressSummary(String address) {
     try {
       String result = CommonHttpUtil.getInstance().getContentFromUrl( "http://tool.ppkpub.org/odin/summary.php?address=" +address);
+    	
+      JSONObject tempResultObject=new JSONObject(result);
+      if("OK".equalsIgnoreCase( tempResultObject.getString("status") ))
+         return  tempResultObject;
+    } catch (Exception e) {
+    }
+    
+    return null;
+  }
+  
+//获得指定BCH地址的概要数据
+  public static JSONObject getBchAddressSummary(String address) {
+    try {
+      String result = CommonHttpUtil.getInstance().getContentFromUrl( "http://tool.ppkpub.org/odin/summary_bch.php?address=" +address);
     	
       JSONObject tempResultObject=new JSONObject(result);
       if("OK".equalsIgnoreCase( tempResultObject.getString("status") ))

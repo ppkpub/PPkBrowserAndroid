@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/verify_data_password_label"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="请输入数据保护密码进行验证："
+        android:gravity="left"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <EditText
+        android:id="@+id/verify_data_password"
+        android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:inputType="textPassword"
+	    android:hint="请输入密码"
+        android:scrollHorizontally="true" />
+    
+    <TextView
+        android:id="@+id/verify_data_warningMessage"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dip"
+        android:layout_marginRight="20dip"
+        android:gravity="center_horizontal"
+        android:text=""
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+</LinearLayout>
