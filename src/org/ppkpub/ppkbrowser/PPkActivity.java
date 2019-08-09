@@ -423,10 +423,13 @@ public class PPkActivity extends Activity
         	String destination=null;
         	BigDecimal amount_btc=null;
         	BigDecimal fee_btc=null;
+        	
+        	Long amount_satoshi=0L;
         	try {
 				obj_tx_argus=new JSONObject( new String( Util.hexStringToBytes(tx_argus_json_hex) ) );
 				source=obj_tx_argus.getString("source");
 				destination=obj_tx_argus.getString("destination");
+				amount_satoshi=obj_tx_argus.getLong("amount_satoshi");
 				amount_btc=new BigDecimal(obj_tx_argus.getLong("amount_satoshi")).divide(new BigDecimal(Config.btc_unit));
 				fee_btc=new BigDecimal(obj_tx_argus.getLong("fee_satoshi")).divide(new BigDecimal(Config.btc_unit));
 			} catch (Exception e) {
@@ -456,7 +459,7 @@ public class PPkActivity extends Activity
     				.setMessage("确认发送下述"+coin_label_cn+"交易吗?"
     				         +"\n发送地址：\n"+source
     						 +"\n目标地址：\n"+destination
-    						 +"\n交易金额："+amount_btc+" "+ coin_symbol
+    						 +"\n交易金额："+amount_btc+" "+ coin_symbol + "["+amount_satoshi+":satoshi]"
     						 +"\n矿工费用："+fee_btc+" "+ coin_symbol
     						 +"\n请注意该交易一旦发出，将无法撤销！")
     				.create();
@@ -1281,17 +1284,43 @@ public class PPkActivity extends Activity
 		}else {
 			final String tmp_private_key= obj_key.optString(ResourceKey.PRIVATE_KEY , "");
 			final String tmp_pub_key= obj_key.optString(ResourceKey.PUBLIC_KEY , "");
-			final String tmp_sign_algo=RSACoder.DEFAULT_SIGNATURE_ALGORITHM ;
+			
+			String tmp_key_algo= obj_key.optString(ResourceKey.ALGO_TYPE , RSACoder.KEY_ALGORITHM); 
+			final String tmp_sign_algo= tmp_key_algo.equalsIgnoreCase(RSACoder.KEY_ALGORITHM) ? RSACoder.DEFAULT_SIGNATURE_ALGORITHM : tmp_key_algo; 
+
 			String tmp_sign;
 			try {
-				tmp_sign=RSACoder.sign(
-						Util.hexStringToBytes(data_hex) , tmp_private_key,tmp_sign_algo
-				     );
-
-				//Log.d("browser", "signPPkResource.verifySign " + data_hex+","+tmp_pub_key +"," + tmp_sign  +"," + tmp_sign_algo  +","  +callback_function);
-				if( !RSACoder.verify(Util.hexStringToBytes(data_hex)  , tmp_pub_key, tmp_sign,tmp_sign_algo) ) {
-					throw new Exception("Self-check sign failed!");
+				if( ResourceKey.ALGO_TYPE_ECC_SECP256K1.equalsIgnoreCase(tmp_sign_algo)  ) {
+					//ECKey tmp_key=new ECKey();
+					//Log.d("browser", "signPPkResource.tmp_pubkey= " + tmp_key.getPublicKeyAsHex());
+					ECKey tmp_key=ECKey.fromPrivate(Util.hexStringToBytes(tmp_private_key) );
+					String tmp_msg=new String(Util.hexStringToBytes(data_hex),Config.PPK_TEXT_CHARSET);
+					tmp_sign= tmp_key.signMessage( tmp_msg ) ;
+				
+					/*
+					tmp_key=ECKey.signedMessageToKey(tmp_msg, tmp_sign);
+					Log.d("browser", "signPPkResource.tmp_key= " + tmp_key.getPublicKeyAsHex());
+					
+					try {
+						tmp_key=ECKey.fromPublicOnly(Util.hexStringToBytes(tmp_pub_key) );
+						tmp_key.verifyMessage(tmp_msg, tmp_sign);
+						Log.d("browser","verify ok");
+				  	}catch(Exception e) {
+				  		Log.d("browser","verify exception:"+e.toString());
+				  	}
+				  	*/
+				}else {
+					tmp_sign=RSACoder.sign(
+							Util.hexStringToBytes(data_hex) , tmp_private_key,tmp_sign_algo
+					     );
+					
 				}
+				
+				//Log.d("browser", "signPPkResource.verifySign " + data_hex+","+tmp_pub_key +"," + tmp_sign  +"," + tmp_sign_algo  +","  +callback_function);
+				if( !ResourceKey.verify(Util.hexStringToBytes(data_hex)  , tmp_pub_key, tmp_sign,tmp_sign_algo) ) {
+					throw new Exception("Self-check sign failed with "+tmp_sign_algo);
+				}
+				//Log.d("browser","Sign passed");
 			} catch (Exception e) {
 				//e.printStackTrace();
 				PeerWebAsyncTask.callbackBeforeExceute(

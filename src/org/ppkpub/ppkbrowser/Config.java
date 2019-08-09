@@ -36,9 +36,9 @@ public class Config {
   public static String stableVersion = "x.x.x" ;
   public static String versionUpdateURL = "https://github.com/ppkpub/PPkBrowserAndroid/raw/master/bin/version.json";
   
-  public static String developeVersion  = "" ;
-  public static String developeVersionUpdateURL   = "http://tool.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
-  //public static String developeVersionUpdateURL   = "http://192.168.62.99:8081/autoupdate/ppkbrowser/version_local.json";
+  public static String developeVersion  = "" ; //:01
+  //public static String developeVersionUpdateURL   = "http://tool.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
+  public static String developeVersionUpdateURL   = "http://192.168.62.99:8081/autoupdate/ppkbrowser/version_local.json";
 
   public static String version = stableVersion + developeVersion;
   
@@ -113,6 +113,8 @@ public class Config {
   public static String JSON_KEY_PPK_REGISTER="register";
   public static String JSON_KEY_PPK_ADMIN="admin";
   public static String JSON_KEY_ORIGINAL_RESP="original_resp";
+  public static String JSON_KEY_PPK_STATUS_CODE="status_code";
+  
   
   public static int PPK_VALIDATION_OK        = 0;
   public static int PPK_VALIDATION_IGNORED   = 1;

@@ -18,7 +18,7 @@
   <div class="form-group">
     <label for="btc_address" class="col-sm-2 control-label">比特币地址</label>
     <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="btc_address" value="" readonly onfocus="this.select()" onmouseover="this.select()"> <button type="text" id="btc_address_summary"  class="btn btn-success" onclick='openBtcDetail();'>...</button> <button type="text" id="btn_send_btc"  class="btn btn-success" onclick='sendBTC();' disabled="true" value="">发送比特币</button><br> <button type="text" id="btn_chnage_address"  class="btn btn-success" onclick='changeAnotherAddress();' disabled="true" value="">切换其它地址</button>  <button type="text" id="btn_new_address"  class="btn btn-success" onclick='generateNewAddress();' disabled="true" value="">创建新地址</button> <button type="text"  id="btn_import_prvkey"  class="btn btn-success" onclick='importPrivateKey();'  disabled="true">导入新地址</button>
+      <input type="text" class="form-control" placeholder="" id="btc_address" value="" readonly onfocus="this.select()" onmouseover="this.select()"> <button type="text" id="btc_address_summary"  class="btn btn-success" onclick='openBtcDetail();'>...</button> <button type="text" id="btn_send_btc"  class="btn btn-success" onclick='sendBTC();' disabled="true" value="">发送比特币</button><br> <button type="text" id="btn_change_address"  class="btn btn-success" onclick='changeBtcAnotherAddress();' disabled="true" value="">切换其它地址</button>  <button type="text" id="btn_new_address"  class="btn btn-success" onclick='generateNewAddress();' disabled="true" value="">创建新地址</button> <button type="text"  id="btn_import_prvkey"  class="btn btn-success" onclick='importPrivateKey();'  disabled="true">导入新地址</button>
     </div>
   </div>
 
@@ -43,7 +43,7 @@
   <div class="form-group">
     <label for="odin_tool_url" class="col-sm-2 control-label">注册管理奥丁号服务网址</label>
     <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="odin_tool_url" value="http://tool.ppkpub.org:9876/odin" > <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='openOdinTool();'>打开</button> <!--<button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="http://192.168.62.99:12345/odin";'>本地测试</button> <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="ppk:40086/";'>PTTP网站测试</button>-->
+      <input type="text" class="form-control" placeholder="" id="odin_tool_url" value="http://tool.ppkpub.org:9876/odin" > <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='openOdinTool();'>打开</button><!-- <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="http://192.168.62.99:12345/odin";'>本地测试</button> <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="ppk:40086/";'>PTTP网站测试</button>  -->
     </div>
   </div>
 </div>
@@ -53,7 +53,7 @@
   <div class="form-group">
     <label for="default_odin" class="col-sm-2 control-label">当前使用的身份标识</label>
     <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="default_odin" value="" onfocus="this.select()" onmouseover="this.select()">
+      <input type="text" class="form-control" placeholder="" id="default_odin" value="" onfocus="this.select()" onmouseover="this.select()" readonly>
       <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='viewDefaultID();'>查看开放信息</button> <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='openOdinTool();'>从我注册的奥丁号中选取</button>
     </div>
   </div>
@@ -74,24 +74,28 @@
     </div>
   </div>
 </div>
-<!--
+
 <h3>开放自主的数字资产</h3>
 <div class="row section">
   <div class="form-group">
-    <label for="ext_asset_odin_uri" class="col-sm-2 control-label">资产奥丁号</label>
+    <label for="ext_asset_odin_uri" class="col-sm-2 control-label">可选的资产/币种列表</label>
     <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="ext_asset_odin_uri" value="ppk:btm/" onfocus="this.select()" onmouseover="this.select()">
+      <select id="ext_asset_list" class="form-control" >
+      <option value="ppk:bch/" selected>ppk:bch/ - 比特现金(BitcoinCash)</option>
+      <!--<option value="ppk:btm/" selected>ppk:btm/ - 比原链(Bytom)</option>-->
+      </select>
     </div>
   </div>
 
   <div class="form-group">
-    <label for="ext_asset_address" class="col-sm-2 control-label">资产地址</label>
+    <label for="ext_asset_address" class="col-sm-2 control-label">对应资产地址</label>
     <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="ext_asset_address" value="" readonly onfocus="this.select()" onmouseover="this.select()"> <button type="text" id="ext_asset_summary"  class="btn btn-success" onclick='openExtAssetDetail();'>...</button> <button type="text" id="ext_asset_send"  class="btn btn-success" onclick='sendBTC();' disabled="true" value="">发送</button> <button type="text" id="ext_asset_chnage_address"  class="btn btn-success" onclick='changeExtAssetAddress();' disabled="true" value="">切换其它地址</button>  <button type="text" id="ext_asset_new_address"  class="btn btn-success" onclick='generateExtAssetAddress();'  value="">创建新地址</button> <button type="text"  id="ext_asset_import_prvkey"  class="btn btn-success" onclick='importExtAssetPrivateKey();'  disabled="true">导入新地址</button>
+      <input type="text" class="form-control" placeholder="" id="ext_asset_address" value="" readonly onfocus="this.select()" onmouseover="this.select()"> <button type="text" id="ext_asset_summary"  class="btn btn-success" onclick='openExtAssetDetail();'>...</button> <button type="text" id="btn_send_ext_asset"  class="btn btn-success" onclick='sendExtAsset();' disabled="true" value="">转账发送</button><!-- <button type="text" id="ext_asset_change_address"  class="btn btn-success" onclick='changeExtAssetAddress();' disabled="true" value="">切换其它地址</button>  <button type="text" id="ext_asset_new_address"  class="btn btn-success" onclick='generateExtAssetAddress();'  value="">创建新地址</button> <button type="text"  id="ext_asset_import_prvkey"  class="btn btn-success" onclick='importExtAssetPrivateKey();'  disabled="true">导入新地址</button>-->
     </div>
   </div>
+  
+  <p><font size="-2">注：后续将逐步增加支持更多数字资产/币种，如ETH、BTM、EOS、LTC等。</font></p>
 </div>
--->
 
 <h3>高级设置</h3>
 <div class="row section">
@@ -102,9 +106,16 @@
       <button type="text" id="btn_set_btc_standard_fee_satoshi"  class="btn btn-warning" onclick='setBtcStandardFeeSatoshi();'>设置</button>
     </div>
   </div>
+  
+  <div class="form-group">
+    <label for="odin_tool_url" class="col-sm-2 control-label">主页网址</label>
+    <div class="col-sm-10" align="right">
+      <input type="text" class="form-control" placeholder="" id="homepage_uri" value="ppk:0/" readonly > <button type="text" id="btn_set_homepage"  class="btn btn-success" onclick='setHomePage();'>修改主页</button>
+    </div>
+  </div>
 
   <div class="form-group">
-    <label for="btn_backup_private_data" class="col-sm-2 control-label">备份或恢复应用数据(包括比特币私钥)</label>
+    <label for="btn_backup_private_data" class="col-sm-2 control-label">备份或恢复应用数据(包括比特币私钥、身份验证密钥等)</label>
     <div class="col-sm-10" align="right">
       <button type="text" id="btn_backup_private_data"  class="btn btn-danger" onclick='backupPrivateData();'>备份/恢复</button>
     </div>
@@ -136,7 +147,7 @@ window.onload=function(){
     var test;
     
     test={"address":"1HVSDUmW3abkitZUoZsYMKZ2PbiKhr8Rdo"};
-    callback_setNewAddress('OK',test);
+    callback_setBtcNewAddress('OK',test);
     test={"status":"OK","register_num":"15","last_register_odin":{"full_odin":"559411.1747","short_odin":"39642","register":"1HVSDUmW3abkitZUoZsYMKZ2PbiKhr8Rdo","admin":"1HVSDUmW3abkitZUoZsYMKZ2PbiKhr8Rdo","block_index":"559411","block_hash":"0000000000000000000cddeb7a38abcba7bff08200b4127cbf37df1af958cbea","block_time":"1548044945"},"balance_satoshi":3000,"unconfirmed_tx_count":0};
     callback_getBtcAddressSummary('OK',test);
     */
@@ -162,12 +173,24 @@ function init(){
         //读取PPk浏览器内置钱包中缺省比特币地址
         PeerWeb.getDefaultAddress(
             'BITCOIN',  
-            'callback_setNewAddress'  //回调方法名称
+            'callback_setBtcNewAddress'  //回调方法名称
         );
         
         //读取PPk浏览器内置钱包中缺省用户身份标识
         PeerWeb.getDefaultODIN(
             'callback_setNewODIN'  //回调方法名称
+        );
+        
+        //读取PPk浏览器内置钱包中缺省比特现金地址
+        PeerWeb.getDefaultAddress(
+            'ppk:bch/',  
+            'callback_setExtAssetNewAddress'  //回调方法名称
+        );
+        
+        //读取PPk浏览器的缺省主页设置
+        PeerWeb.getDefaultSetting(
+            'Homepage',
+            'callback_getHomepage'  //回调方法名称
         );
     }else{
         console.log("PeerWeb not valid");
@@ -175,18 +198,8 @@ function init(){
     }
 }
 
-function callback_getStandardFeeSatoshi(status,obj_data){
-    if('OK'==status){
-        //alert("obj_data.StandardFeeSatoshi="+obj_data.StandardFeeSatoshi);
-        if(obj_data.StandardFeeSatoshi!=null && Math.round(obj_data.StandardFeeSatoshi)>=500 && Math.round(obj_data.StandardFeeSatoshi)<=50000){
-            MIN_FEE_SATOSHI=Math.round(obj_data.StandardFeeSatoshi);
-            document.getElementById("btc_standard_fee_satoshi").innerHTML=""+MIN_FEE_SATOSHI;
-        }else{
-            alert("无效的矿工费用数值，请重新设置！\n默认为1000，可设范围为500-50000。\n给矿工的费用越高，交易会被更优先确认收录到区块链上。");
-        }
-    }
-}
 
+//设置相关
 function backupPrivateData(){
     PeerWeb.backupPrivateData(
         'callback_backupPrivateData'  //回调方法名称
@@ -210,73 +223,58 @@ function setBtcStandardFeeSatoshi(){
         );
 }
 
-
-function callback_setNewODIN(status,obj_data){
+function callback_getStandardFeeSatoshi(status,obj_data){
     if('OK'==status){
-        if(obj_data.odin_uri!=null && obj_data.odin_uri.trim().length>0){
-            document.getElementById("default_odin").value=obj_data.odin_uri.trim();
-            
-            PeerWeb.getPPkResourcePubkey(
-                obj_data.odin_uri,
-                'callback_getDefaultOdinPubkey'  //回调方法名称
-            );
+        //alert("obj_data.StandardFeeSatoshi="+obj_data.StandardFeeSatoshi);
+        if(obj_data.StandardFeeSatoshi!=null && Math.round(obj_data.StandardFeeSatoshi)>=500 && Math.round(obj_data.StandardFeeSatoshi)<=50000){
+            MIN_FEE_SATOSHI=Math.round(obj_data.StandardFeeSatoshi);
+            document.getElementById("btc_standard_fee_satoshi").innerHTML=""+MIN_FEE_SATOSHI;
+        }else{
+            alert("无效的矿工费用数值，请重新设置！\n默认为1000，可设范围为500-50000。\n给矿工的费用越高，交易会被更优先确认收录到区块链上。");
         }
     }
 }
 
-function callback_getDefaultOdinPubkey(status,obj_data){
-    if('OK'==status){
-        try{
-            mDefaultOdinPubKey=obj_data.online_pubkey;
-            document.getElementById("odin_online_pubkey").value=obj_data.online_pubkey;
-            document.getElementById("odin_local_pubkey").value=obj_data.local_pubkey;
-            
-            var online_pubkey=document.getElementById("odin_online_pubkey").value;
-            var local_pubkey=document.getElementById("odin_local_pubkey").value;
+function setHomePage(){
+    PeerWeb.setDefaultSetting(
+            'Homepage',
+            'callback_getHomepage'  //回调方法名称
+        );
+}
 
-            if(local_pubkey==online_pubkey && online_pubkey.length>0 ){
-                document.getElementById("odin_local_pubkey").value="本机密钥有效，对应公钥已发布到网络上；对应的私钥只在本机安全保存，可在验证身份时自主签名。";
-                document.getElementById("btn_update_online_pubkey").disabled=true;
-            }else if(local_pubkey!=online_pubkey && local_pubkey.length>0 ){
-                document.getElementById("btn_update_online_pubkey").disabled=false;
-            }
-        }catch(e){
-            document.getElementById("odin_online_pubkey").value="获取的开放身份标识公钥信息有误!\n"+e;
-            document.getElementById("odin_local_pubkey").value=document.getElementById("odin_online_pubkey").value;
-            document.getElementById("btn_update_online_pubkey").disabled=true;
+function callback_getHomepage(status,obj_data){
+    if('OK'==status){
+        if(obj_data.Homepage!=null){
+            document.getElementById("homepage_uri").value=obj_data.Homepage;
         }
-    }else{
-        document.getElementById("odin_online_pubkey").value="无法获取到开放身份标识对应密钥！\n请检查确认";
-        document.getElementById("odin_local_pubkey").value=document.getElementById("odin_online_pubkey").value;
-        document.getElementById("btn_update_online_pubkey").disabled=true;
     }
 }
 
-
-function changeAnotherAddress(){
+//BTC相关
+function changeBtcAnotherAddress(){
     //切换使用PPk浏览器内置钱包中的其它比特币地址
     PeerWeb.changeAnotherAddress(
         'BITCOIN',  
-        'callback_setNewAddress'  //回调方法名称
+        'callback_setBtcNewAddress'  //回调方法名称
     );
 }
 
-function callback_setNewAddress(status,obj_data){
+function callback_setBtcNewAddress(status,obj_data){
     if('OK'==status){
         if(obj_data.address!=null || obj_data.address.trim().length>0){
             mCurrentAddress=obj_data.address.trim();
             document.getElementById("btc_address").value=mCurrentAddress;
-            refreshAddressSummary();
+            refreshBtcAddressSummary();
         }
     }
 
     document.getElementById("btn_send_btc").disabled=false;
-    document.getElementById("btn_chnage_address").disabled=false;
+    document.getElementById("btn_change_address").disabled=false;
     document.getElementById("btn_new_address").disabled=false;
     document.getElementById("btn_import_prvkey").disabled=false;
 }
 
-function refreshAddressSummary(){
+function refreshBtcAddressSummary(){
     document.getElementById("btc_address_summary").innerHTML="...";
     document.getElementById("odin_register_num").innerHTML="...";
     document.getElementById("last_register_odin").innerHTML="...";
@@ -326,29 +324,8 @@ function openBtcDetail(){
 function generateNewAddress(){
     PeerWeb.generateNewAddress(
             'BITCOIN',
-            'callback_setNewAddress'
+            'callback_setBtcNewAddress'
         );
-}
-
-function generateExtAssetAddress(){
-    var ext_asset_odin_uri=document.getElementById("ext_asset_odin_uri").value;
-    PeerWeb.generateNewAddress(
-            ext_asset_odin_uri,
-            'callback_setExtAssetNewAddress'
-        );
-}
-function callback_setExtAssetNewAddress(status,obj_data){
-    if('OK'==status){
-        if(obj_data.address!=null || obj_data.address.trim().length>0){
-            document.getElementById("ext_asset_address").value=obj_data.address;
-            //refreshExtAssetAddressSummary();
-        }
-    }
-
-    document.getElementById("ext_asset_send").disabled=false;
-    document.getElementById("ext_asset_chnage_address").disabled=false;
-    document.getElementById("ext_asset_new_address").disabled=false;
-    document.getElementById("ext_asset_import_prvkey").disabled=false;
 }
 
 function importPrivateKey(){
@@ -359,7 +336,7 @@ function importPrivateKey(){
             PeerWeb.importPrivateKey(
                 'BITCOIN',
                 private_key,
-                'callback_setNewAddress'
+                'callback_setBtcNewAddress'
               );
         }else{
             alert("请在地址文本框里输入要导入的比特币地址私钥，必须是以5,L或K起始的字符串");
@@ -425,13 +402,78 @@ function callback_getSignedTX(status,obj_data){
 
 function callback_sendBtcTX(status,obj_data){
     if('OK'==status){
-        refreshAddressSummary();
+        refreshBtcAddressSummary();
         alert("已发出比特币转账交易!\点击左侧余额可以查看交易确认状态.");
     }else{
         alert("发送比特币失败!\n(status="+status+")\n网络服务可能有异常，请稍后再试.");
     }
     document.getElementById("btn_send_btc").disabled=false;
     document.getElementById("btn_send_btc").innerHTML="发送比特币";
+}
+
+//ODIN和身份相关
+
+//判断是否为ODIN根标识
+function isRootODIN(uri){
+    var parts = uri.split("/");
+    
+    if(parts.length==1)
+        return true;
+    
+    if(parts.length>2)
+        return false;
+    
+    if(parts[1].trim().length==0)
+        return true;
+    
+    var parts2 = parts[1].split("#");
+    if(parts2[0].trim().length==0)
+        return true;
+    else
+        return false;
+}
+
+function callback_setNewODIN(status,obj_data){
+    if('OK'==status){
+        if(obj_data.odin_uri!=null && obj_data.odin_uri.trim().length>0){
+            document.getElementById("default_odin").value=obj_data.odin_uri.trim();
+            
+            PeerWeb.getPPkResourcePubkey(
+                obj_data.odin_uri,
+                'callback_getDefaultOdinPubkey'  //回调方法名称
+            );
+        }
+    }
+}
+
+function callback_getDefaultOdinPubkey(status,obj_data){
+    if('OK'==status){
+        try{
+            document.getElementById("odin_online_pubkey").value=obj_data.online_pubkey;
+            document.getElementById("odin_local_pubkey").value=obj_data.local_pubkey;
+            
+            mDefaultOdinPubKey=document.getElementById("odin_online_pubkey").value;
+            var local_pubkey=document.getElementById("odin_local_pubkey").value;
+            
+            document.getElementById("odin_online_pubkey").value=obj_data.online_algo+":"+mDefaultOdinPubKey;
+            document.getElementById("odin_local_pubkey").value=obj_data.local_algo+":"+local_pubkey;
+
+            if( mDefaultOdinPubKey.length>0 && mDefaultOdinPubKey==local_pubkey  ){
+                document.getElementById("odin_local_pubkey").value="本机密钥有效，对应公钥已发布到网络上；对应的私钥只在本机安全保存，可在验证身份时自主签名。";
+                document.getElementById("btn_update_online_pubkey").disabled=true;
+            }else if(local_pubkey!=mDefaultOdinPubKey && local_pubkey.length>0 ){
+                document.getElementById("btn_update_online_pubkey").disabled=false;
+            }
+        }catch(e){
+            document.getElementById("odin_online_pubkey").value="获取的开放身份标识公钥信息有误!\n"+e;
+            document.getElementById("odin_local_pubkey").value=document.getElementById("odin_online_pubkey").value;
+            document.getElementById("btn_update_online_pubkey").disabled=true;
+        }
+    }else{
+        document.getElementById("odin_online_pubkey").value="无法获取到开放身份标识对应密钥！\n请检查确认";
+        document.getElementById("odin_local_pubkey").value=document.getElementById("odin_online_pubkey").value;
+        document.getElementById("btn_update_online_pubkey").disabled=true;
+    }
 }
 
 function openOdinTool(){
@@ -637,7 +679,7 @@ function newOdinFast(){
                                 "" ,
                                 new_odin_title,
                                 "",
-                                0
+                                "0"
                             );
     
     //调用PeerWeb接口生成新注册奥丁号的对应签名比特币交易
@@ -667,7 +709,7 @@ function callback_newOdinFastSignTX(status,obj_data){
 
 function callback_newOdinFastSendTX(status,obj_data){
     if('OK'==status){
-        refreshAddressSummary();
+        refreshBtcAddressSummary();
         alert("已发出注册奥丁号的交易!\请等待至少一个新区块确认后，通过下面的注册管理服务网址来查看结果.");
     }else{
         alert("发送注册奥丁号的交易失败!\n(status="+status+")\n请稍后再试");
@@ -720,6 +762,148 @@ function genNewOdinDataJSON( source, destination, remark_title, email , auth_set
 
   return odin_data_json;
 }
+
+//扩展资产币种相关
+function generateExtAssetAddress(){
+    var ext_asset_odin_uri=document.getElementById("ext_asset_odin_uri").value;
+    PeerWeb.generateNewAddress(
+            ext_asset_odin_uri,
+            'callback_setExtAssetNewAddress'
+        );
+}
+function callback_setExtAssetNewAddress(status,obj_data){
+    if('OK'==status){
+        if(obj_data.address!=null || obj_data.address.trim().length>0){
+            document.getElementById("ext_asset_address").value=obj_data.address;
+            refreshExtAssetAddressSummary();
+        }
+    }
+
+    document.getElementById("btn_send_ext_asset").disabled=false;
+    //document.getElementById("ext_asset_change_address").disabled=false;
+    //document.getElementById("ext_asset_new_address").disabled=false;
+    //document.getElementById("ext_asset_import_prvkey").disabled=false;
+}
+
+function refreshExtAssetAddressSummary(){
+    document.getElementById("ext_asset_summary").innerHTML="...";
+    //document.getElementById("odin_register_num").innerHTML="...";
+    //document.getElementById("last_register_odin").innerHTML="...";
+    //document.getElementById("unconfirmed_tx_count").innerHTML="...";
+
+    var asset_uri=ext_asset_list.options[ ext_asset_list.selectedIndex ].value;
+    if(asset_uri!='ppk:bch/'){
+        //alert('暂时不支持的资产币种：'.asset_uri);
+        return ;
+    }
+    
+    var ext_asset_address=document.getElementById("ext_asset_address").value;
+    if(ext_asset_address.length == 0 ){
+        return;
+    }
+    
+    //读取指定比特币地址的概要汇总信息
+    PeerWeb.getAddressSummary(
+        asset_uri,  
+        ext_asset_address,
+        'callback_getExtAssetAddressSummary'  //回调方法名称
+    );
+}
+
+function callback_getExtAssetAddressSummary(status,obj_data){
+    if('OK'==status){
+        if(obj_data!=null){
+            if(typeof(obj_data.balance_satoshi) !== 'undefined'){
+                document.getElementById("ext_asset_summary").innerHTML="余额:"+ (obj_data.balance_satoshi/BTC_SATOSHI_UNIT)+" BCH";
+            }
+        }
+    }
+}
+
+//转账发送更多数字资产的示例
+function sendExtAsset(){
+    var ext_asset_list=document.getElementById("ext_asset_list");
+    
+    var asset_uri=ext_asset_list.options[ ext_asset_list.selectedIndex ].value;
+    
+    if(asset_uri!='ppk:bch/'){
+        alert('暂时不支持的资产币种：'.asset_uri);
+        return ;
+    }
+    
+    var ext_asset_address=document.getElementById("ext_asset_address").value;
+    
+    if(ext_asset_address.length ==0 ){
+        alert('该资产地址尚未设置，请先创建或导入一个该资产对应的币种地址！');
+        return;
+    }
+    
+    var dest_address = prompt("请输入收款的比特现金公开地址（以1起始的字符串）","");
+    if (dest_address != null){
+        if( dest_address.substr(0,1)=='1' ){
+            var send_amount = prompt("请输入要发送给\n"+dest_address+"\n的比特现金（BCH)数额：","0.0");
+            if (send_amount != null){
+                if(!isNaN(send_amount)){
+                    var send_amount_satoshi= Math.floor( send_amount * BTC_SATOSHI_UNIT );
+                    var tx_argus_json='{"source":"'+ext_asset_address             //交易发送者地址
+                                     +'","destination":"'+dest_address                 //交易接收者地址
+                                     +'","amount_satoshi":'+send_amount_satoshi //转账金额,单位satoshi
+                                     +',"fee_satoshi":'+MIN_FEE_SATOSHI+'}';    //给矿工的费用,单位satoshi
+                    
+                    document.getElementById("btn_send_ext_asset").disabled=true;
+                    document.getElementById("btn_send_ext_asset").innerHTML="正在处理，请稍候...";
+    
+                    PeerWeb.getSignedTX(
+                        'ppk:bch/',
+                        stringToHex(tx_argus_json),  //待生成交易的参数数据
+                        'callback_getExtAssetSignedTX'
+                      );
+                }else{
+                    alert("输入的金额数值无效！");
+                }
+             }
+        }else{
+            alert("请在地址文本框里输入对方收款的比特现金公开地址（以1起始的字符串）！");
+        }
+    }
+}
+
+function callback_getExtAssetSignedTX(status,obj_data){
+    if('OK'==status){
+        var ext_asset_address=document.getElementById("ext_asset_address").value;
+        var asset_uri=ext_asset_list.options[ ext_asset_list.selectedIndex ].value;
+        if(asset_uri!='ppk:bch/'){
+            alert('暂时不支持的资产币种：'.asset_uri);
+            return ;
+        }
+    
+        //调用PeerWeb接口发送已签名的比特币交易
+        PeerWeb.sendSignedTX(
+                asset_uri,
+                ext_asset_address,  //交易发送者地址
+                obj_data.signed_tx_hex,  //已签名的比特币交易数据，HEX格式
+                'callback_sendExtAssetTX' //回调方法 
+            );
+    }else{
+        if('CANCELED'!=status){
+            alert("比特现金的转账交易失败!\n(status="+status+")\n请确认当前的地址有足够余额.");
+        }
+        document.getElementById("btn_send_ext_asset").disabled=false;
+        document.getElementById("btn_send_ext_asset").innerHTML="发送比特现金";
+    }
+}
+
+function callback_sendExtAssetTX(status,obj_data){
+    if('OK'==status){
+        refreshExtAssetAddressSummary();
+        alert("已发出比特现金转账交易!\点击左侧余额可以查看交易确认状态.");
+    }else{
+        alert("发送比特现金失败!\n(status="+status+")\n网络服务可能有异常，请稍后再试.");
+    }
+    document.getElementById("btn_send_ext_asset").disabled=false;
+    document.getElementById("btn_send_ext_asset").innerHTML="发送比特现金";
+}
+
    
 //Ascii/Unicode字符串转换成16进制表示
 function stringToHex(str){
@@ -775,27 +959,6 @@ function bytesToHex(bytes) {
         hex.push((bytes[i] & 0xF).toString(16).toUpperCase());
     }
     return hex.join("");
-}
-
-//判断是否为ODIN根标识
-function isRootODIN(uri){
-    var parts = uri.split("/");
-    
-    if(parts.length==1)
-        return true;
-    
-    if(parts.length>2)
-        return false;
-    
-    if(parts[1].trim().length==0)
-        return true;
-    
-    var parts2 = parts[1].split("#");
-    if(parts2[0].trim().length==0)
-        return true;
-    else
-        return false;
-    
 }
 </script>
 </body>

@@ -1,5 +1,11 @@
 package org.ppkpub.ppkbrowser;
 
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.X509EncodedKeySpec;
+
+import org.bitcoinj.core.ECKey;
 import org.json.JSONObject;
 
 import android.util.Log;
@@ -14,7 +20,9 @@ public class ResourceKey  {
   public static final String PRIVATE_KEY = "prv";  
   public static final String ALGO_TYPE   = "type";  
   
-  public static final String DEFAULT_ALGO_TYPE_RSA = "RSA";  
+  public static final String DEFAULT_ALGO_TYPE_RSA = RSACoder.KEY_ALGORITHM;  
+  public static final String ALGO_TYPE_ECC_SECP256K1 = "bitcoin_secp256k1";  
+  
   
   private static JSONObject mObjResKeySet;
   
@@ -124,6 +132,31 @@ public class ResourceKey  {
 	        
 		}
 		
+		if( tmp_obj==null) {
+			//≥¢ ‘”√BTCµÿ÷∑ÀΩ‘ø
+			JSONObject obj_ap_resp = PPkURI.fetchPPkURI(res_uri);
+			if(obj_ap_resp!=null) {
+		    	byte[] result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_PPK_CHUNK);
+	    		JSONObject obj_res= new JSONObject(new String(result_bytes,Config.PPK_TEXT_CHARSET)) ;
+	    		
+	    		String  exist_register = obj_res.optString("register");
+	    		
+	    		if(exist_register!=null) {
+		    		String vd_set_pubkey= BitcoinWallet.getPubkeyHex(exist_register);
+		    		String vd_set_prvkey= BitcoinWallet.getPrvkeyHex(exist_register);
+		    		if(vd_set_pubkey!=null && vd_set_prvkey!=null) {
+			    		String vd_set_algo=ResourceKey.ALGO_TYPE_ECC_SECP256K1;
+			    		
+						tmp_obj=new JSONObject();
+						tmp_obj.put(PRIVATE_KEY , vd_set_prvkey);
+						tmp_obj.put(PUBLIC_KEY, vd_set_pubkey);
+						tmp_obj.put(ALGO_TYPE, vd_set_algo);	
+		    		}
+	    		}
+			}
+			
+		}
+		
 		return tmp_obj;
 	  } catch (Exception e) {
 		Toast.makeText( mMainActivity.getWindow().getContext(), "ResourceKey getkey error:"+e.toString(), Toast.LENGTH_SHORT).show();
@@ -131,5 +164,22 @@ public class ResourceKey  {
 	  }
 
   }
+  
+  public static boolean verify(byte[] data, String pubkey_hex, String sign_base64,String sign_algo) {  
+  	boolean result=false;
+  	try {
+	  if(ALGO_TYPE_ECC_SECP256K1.equalsIgnoreCase( sign_algo ) ) {
+		  ECKey tmp_key=ECKey.fromPublicOnly(Util.hexStringToBytes(pubkey_hex) );
+		  tmp_key.verifyMessage(new String(data,Config.PPK_TEXT_CHARSET), sign_base64);
+		  result=true;
+	  }else {
+		  result=RSACoder.verify(data  , pubkey_hex, sign_base64,sign_algo);
+	  }
+  	}catch(Exception e) {
+  	  Log.d("Resourcekey","verify("+pubkey_hex+","+sign_algo+") exception:"+e.toString());
+  	  result=false;
+  	}
+  	return result;
+  }  
   
 }

@@ -235,6 +235,7 @@ public class PPkURI {
       int pttpStatusCode=obj_data.getInt("status_code");
       Log.d("PPkURI","pttpStatusCode="+pttpStatusCode);
       obj_ap_resp = new JSONObject();
+      obj_ap_resp.put(Config.JSON_KEY_PPK_STATUS_CODE, pttpStatusCode );
       obj_ap_resp.put(Config.JSON_KEY_ORIGINAL_RESP, str_ap_data_json );
       if (pttpStatusCode == HttpURLConnection.HTTP_OK) {
         byte[]  chunk_content = null;

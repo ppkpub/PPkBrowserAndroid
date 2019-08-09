@@ -3,6 +3,7 @@ package org.ppkpub.ppkbrowser;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -510,6 +511,11 @@ public class BitcoinWallet  {
     }
     return null;
   }
+  
+  //清空缓存的未花费交易输出
+  public static void clearCachedLastUnspents(){
+	  cachedLastUnspentList.clear();
+  }
 
 
   //获取当前地址列表 2019-01-15
@@ -577,5 +583,90 @@ public class BitcoinWallet  {
     }
     
     return null;
+  }
+  
+  /**
+   * @param msg 要签名的信息
+   * @param address 签名用的地址
+   * @return base64编码的签名
+   */
+  public static String signMsg(String msg,String address) {
+	ECKey source_key=null; 
+
+    for (ECKey key : mWallet.getImportedKeys()) {
+        try {
+          if (key.toAddress(params).equals(new Address(params, address))) {
+            source_key=key;
+            break;
+          }
+        } catch (AddressFormatException e) {
+
+        }
+    }
+    
+    if(null==source_key)
+       return null;
+
+    return source_key.signMessage(msg);
+  }
+  
+  /**
+   * @param msg 明文
+   * @param signatureMsg 签名好的信息(base64编码)
+   * @param pubkey 公钥(HEX编码)
+   * @return
+   */
+  public static boolean verifyMessage(String msg,String signature_of_msg, String pubkey_hex) {
+      boolean result = false;
+      ECKey ecKey = ECKey.fromPublicOnly(Util.hexStringToBytes(pubkey_hex));
+      try {
+          ecKey.verifyMessage(msg, signature_of_msg);
+          result = true;
+      } catch (SignatureException e) {
+          result = false;
+          e.printStackTrace();
+      } 
+      
+      return result;
+  }
+  
+  //获得指定地址的公钥（HEX编码）
+  public static String getPubkeyHex(String address) {
+	ECKey source_key=null; 
+
+    for (ECKey key : mWallet.getImportedKeys()) {
+        try {
+          if (key.toAddress(params).equals(new Address(params, address))) {
+            source_key=key;
+            break;
+          }
+        } catch (AddressFormatException e) {
+
+        }
+    }
+    
+    if(null==source_key)
+       return null;
+    return source_key.getPublicKeyAsHex() ;
+  }
+  
+  //获得指定地址的私钥（HEX编码）
+  public static String getPrvkeyHex(String address) {
+	ECKey source_key=null; 
+
+    for (ECKey key : mWallet.getImportedKeys()) {
+        try {
+          if (key.toAddress(params).equals(new Address(params, address))) {
+            source_key=key;
+            break;
+          }
+        } catch (AddressFormatException e) {
+
+        }
+    }
+    
+    if(null==source_key)
+       return null;
+    return source_key.getPrivateKeyAsHex() ;
   }
 }
