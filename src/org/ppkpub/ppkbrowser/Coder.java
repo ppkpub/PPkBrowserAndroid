@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 import android.util.Base64;
   
 /** 
- * 基础加密组件 
+ * 基础加密哈希组件 
  *  
  * @author 梁栋 
  * @version 1.0 

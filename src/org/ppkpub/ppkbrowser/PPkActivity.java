@@ -95,8 +95,9 @@ public class PPkActivity extends Activity
         
         //初始化
         Config.init(this);
+        NetCache.init(this);
         BitcoinWallet.init(this);
-        Odin.init(this);
+        ODIN.init(this);
         ResourceKey.init(this);
         PeerWebAsyncTask.init(this);
         
@@ -167,8 +168,8 @@ public class PPkActivity extends Activity
             }
         });
         
-        //gotoURI( Config.ppkDefaultHomepage );
-        gotoURI("ppk:joy/"); //缺省显示“精彩推荐”
+        gotoURI( Config.ppkDefaultHomepage );
+        //gotoURI( Config.ppkHotURI ); //缺省显示“精彩推荐”
         
         buttonGo = (ImageButton) findViewById(R.id.buttonGo);
         buttonGo.setOnClickListener(new View.OnClickListener()
@@ -232,9 +233,12 @@ public class PPkActivity extends Activity
             @Override
             public void onClick(View view)
             {
-                textStatus.setText("Reloading "+webshow.getUrl());
+            	String current_url =  webshow.getUrl();
+                textStatus.setText("Reloading "+ current_url);
+                NetCache.deleteNetCache(current_url);
                 webshow.clearCache(true);
-                webshow.reload() ;
+                //webshow.reload() ;
+                gotoURI( current_url );
             }
         });
         
@@ -245,7 +249,7 @@ public class PPkActivity extends Activity
             public void onClick(View view)
             {
                 
-                gotoURI(Config.getUserDefinedSet("Homepage")) ;
+                gotoURI(Config.ppkDefaultHomepage) ;
             }
         });
         
@@ -268,7 +272,7 @@ public class PPkActivity extends Activity
             @Override
             public void onClick(View view)
             {
-            	gotoURI("ppk:joy");
+            	gotoURI(Config.ppkHotURI);
             }
         });
         
@@ -290,7 +294,7 @@ public class PPkActivity extends Activity
 	            try {
 	            	updateInfoService = new UpdateInfoService( );
 	                updateInfoService.refreshUpdateInfo();
-	                //Toast.makeText(UpdateActivity.this, "updateinfo:"+info, Toast.LENGTH_SHORT).show();
+	                //Toast.makeText(PPkActivity.this, "最新版本:"+updateInfoService.getNewstVersion(), Toast.LENGTH_SHORT).show();
 	                handlerUpdateService.sendEmptyMessage(0);
 	            } catch (Exception e) {
 	                e.printStackTrace();
@@ -302,6 +306,8 @@ public class PPkActivity extends Activity
     @SuppressLint("HandlerLeak")
 	private Handler handlerUpdateService = new Handler() {
 	    public void handleMessage(Message msg) {
+	    	Toast.makeText(PPkActivity.this, "最新版本:"+updateInfoService.getNewstVersion(), Toast.LENGTH_SHORT).show();
+	    	
 	        if (updateInfoService.isNeedUpdate()) {
             	Intent intent = new Intent(PPkActivity.this,
 						UpdateActivity.class);
@@ -329,7 +335,7 @@ public class PPkActivity extends Activity
  				
  				/*
  				//调用签名确认
- 				String user_odin_uri=Odin.getDefaultOdinURI();
+ 				String user_odin_uri=ODIN.getDefaultOdinURI();
  				String login_confirm_url=content;
  				signWithPPkResourcePrvKey(
  					user_odin_uri,
@@ -459,7 +465,7 @@ public class PPkActivity extends Activity
     				.setMessage("确认发送下述"+coin_label_cn+"交易吗?"
     				         +"\n发送地址：\n"+source
     						 +"\n目标地址：\n"+destination
-    						 +"\n交易金额："+amount_btc+" "+ coin_symbol + "["+amount_satoshi+":satoshi]"
+    						 +"\n交易金额："+amount_btc+" "+ coin_symbol 
     						 +"\n矿工费用："+fee_btc+" "+ coin_symbol
     						 +"\n请注意该交易一旦发出，将无法撤销！")
     				.create();
@@ -578,6 +584,29 @@ public class PPkActivity extends Activity
 	            }
 	        });
 		}
+    }
+    
+    @JavascriptInterface
+    public void clearNetCache(final String clear_domain,final String callback_function){
+    	Log.d("browser", "clearNetCache " + clear_domain+","+callback_function);
+
+    	DefaultCancelButtonClickListener cancelButtonClickListener=new DefaultCancelButtonClickListener(callback_function);
+    	AlertDialog dialog;
+    	
+    	dialog = new AlertDialog.Builder(this)
+		    .setTitle("确认清除缓存吗?")
+			.setNegativeButton("取消", cancelButtonClickListener)
+			.setPositiveButton("确定", new OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					//处理确认按钮的点击事件
+					new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_CLEAR_NET_CACHE  ).execute(clear_domain,callback_function);
+				}
+			})
+			.setMessage("确认清除全部网络缓存吗?")
+			.create();
+    	
+		dialog.show();
     }
     
     
@@ -1037,15 +1066,16 @@ public class PPkActivity extends Activity
     }
     
     @JavascriptInterface
-    public void changeAnotherODIN(final String new_odin_uri,final String callback_function){
-    	Log.d("browser", "changeAnotherODIN " + new_odin_uri+","+callback_function);
+    public void changeAnotherODIN( String new_id_uri,final String callback_function){
+    	Log.d("browser", "changeAnotherODIN " + new_id_uri+","+callback_function);
     	
-    	if( ! PPkURI.isValidPPkURI(new_odin_uri) ){
+    	final String format_id_uri=ODIN.formatPPkURI(new_id_uri,true);
+    	if( format_id_uri ==null ){
     		PeerWebAsyncTask.callbackBeforeExceute(
     				this.webshow,
     				callback_function,
     				PeerWebAsyncTask.STATUS_INVALID_ARGU,
-    				"Not supported new_odin_uri:"+new_odin_uri
+    				"Not supported new_id_uri:"+new_id_uri
     			);
     		return;
     	}
@@ -1070,7 +1100,7 @@ public class PPkActivity extends Activity
     	
 		dialog = new AlertDialog.Builder(this)
 		    .setTitle("请确定切换使用新的奥丁号")
-		    .setMessage("请确定使用下面的奥丁号作为用户身份\n  "+new_odin_uri)
+		    .setMessage("请确定使用下面的奥丁号作为用户身份\n  "+format_id_uri)
 			.setNegativeButton("取消", cancelButtonClickListener)
 			.setPositiveButton("确定", null)
 			.create();
@@ -1081,10 +1111,10 @@ public class PPkActivity extends Activity
 	            @Override
 	            public void onClick(View v){
 	            	//处理确认按钮的点击事件
-	            	Odin.setDefaultOdinURI(new_odin_uri);
+	            	ODIN.setDefaultOdinURI(format_id_uri);
 				    dialog.dismiss();
-				    Toast.makeText(v.getContext(), "OK,用户身份标识已设为 "+new_odin_uri, Toast.LENGTH_SHORT).show();
-				    new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_CHANGE_ANOTHER_ODIN ).execute(new_odin_uri,callback_function);
+				    Toast.makeText(v.getContext(), "OK,用户身份标识已设为 "+format_id_uri, Toast.LENGTH_SHORT).show();
+				    new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_CHANGE_ANOTHER_ODIN ).execute(format_id_uri,callback_function);
 				    
 	            }
 	        });
@@ -1092,20 +1122,21 @@ public class PPkActivity extends Activity
     }
     
     @JavascriptInterface
-    public void getPPkResourcePubkey(final String ppk_uri,final String callback_function){
-    	Log.d("browser", "getPPkResourcePubkey " + ppk_uri+","+callback_function);
+    public void getPPkResourcePubkey(String input_uri,final String callback_function){
+    	Log.d("browser", "getPPkResourcePubkey " + input_uri+","+callback_function);
     	
-    	if( ! PPkURI.isValidPPkURI(ppk_uri)  ){
+    	final String format_id_uri=ODIN.formatPPkURI(input_uri,true);
+    	if( format_id_uri ==null ){
     		PeerWebAsyncTask.callbackBeforeExceute(
     				this.webshow,
     				callback_function,
     				PeerWebAsyncTask.STATUS_INVALID_ARGU,
-    				"Not supported uri: "+ppk_uri
+    				"Not supported uri: "+input_uri
     			);
     		return;
     	}
     	
-    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_PPK_RESOURCE_PUBKEY ).execute(ppk_uri,callback_function);
+    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_PPK_RESOURCE_PUBKEY ).execute(format_id_uri,callback_function);
     }
     /*
     public void getPPkResourcePubkey(final String ppk_uri,final String callback_function){
@@ -1137,27 +1168,28 @@ public class PPkActivity extends Activity
     */
     
     @JavascriptInterface
-    public void setPPkResourceKey(final String ppk_uri,final String callback_function){
-    	Log.d("browser", "setPPkResourceKey " + ppk_uri +","+callback_function);
+    public void setPPkResourceKey(String input_uri,final String callback_function){
+    	Log.d("browser", "setPPkResourceKey " + input_uri +","+callback_function);
     	
     	final AlertDialog dialog;
     	DefaultCancelButtonClickListener cancelButtonClickListener=new DefaultCancelButtonClickListener(callback_function);
     	
-    	if( !PPkURI.isValidPPkURI(ppk_uri) ){
+    	final String format_id_uri=ODIN.formatPPkURI(input_uri,true);
+    	if( format_id_uri ==null ){
     		dialog = new AlertDialog.Builder(this)
 			    .setTitle("提示")
 				.setNegativeButton("关闭", cancelButtonClickListener)
-				.setMessage("无效的资源地址:"+ppk_uri+"\n需以 "+Config.PPK_URI_PREFIX+" 或 "+Config.DIDPPK_URI_PREFIX+"  起始。 ")
+				.setMessage("无效的资源地址:"+input_uri+"\n需以 "+Config.PPK_URI_PREFIX+" 或 "+Config.DIDPPK_URI_PREFIX+"  起始。 ")
 				.create(); 
     		
     		dialog.show();
     	}else{
-    		final JSONObject obj_key = ResourceKey.getKey(ppk_uri,true);
+    		final JSONObject obj_key = ResourceKey.getKey(format_id_uri,true);
     		if(obj_key==null) {
     			dialog = new AlertDialog.Builder(this)
     				    .setTitle("提示")
     					.setNegativeButton("关闭", cancelButtonClickListener)
-    					.setMessage("无法生成有效密钥！\n对应地址:"+ppk_uri)
+    					.setMessage("无法生成有效密钥！\n对应地址:"+format_id_uri)
     					.create();
     	    		
     			dialog.show();
@@ -1168,7 +1200,7 @@ public class PPkActivity extends Activity
 	        	
 				dialog = new AlertDialog.Builder(this)
 				    .setTitle("查看/设置标识验证密钥")
-				    .setMessage("标识："+ppk_uri)
+				    .setMessage("标识："+format_id_uri)
 				    .setView(DialogView)//设置自定义对话框的样式
 					.setNegativeButton("取消", cancelButtonClickListener)
 					.setPositiveButton("确定", null)
@@ -1183,8 +1215,8 @@ public class PPkActivity extends Activity
 	    				final EditText txtSetPubkey = (EditText)DialogView.findViewById(R.id.setkey_pubkey ); 
 	    				final EditText txtSetPrvkey = (EditText)DialogView.findViewById(R.id.setkey_prvkey ); 
 	
-	    				txtSetPubkey.setText( obj_key.optString(ResourceKey.PUBLIC_KEY , "") );
-	    				txtSetPrvkey.setText( obj_key.optString(ResourceKey.PRIVATE_KEY , "") );
+	    				txtSetPubkey.setText( obj_key.optString(RSACoder.PUBLIC_KEY , "") );
+	    				txtSetPrvkey.setText( obj_key.optString(RSACoder.PRIVATE_KEY , "") );
 	    				
 	    				dialog.show();
 	    				
@@ -1196,10 +1228,10 @@ public class PPkActivity extends Activity
 	    		            	String pub_key = txtSetPubkey.getText().toString() ;
 	    	    				String prv_key = txtSetPrvkey.getText().toString() ;
 	
-	    		            	ResourceKey.saveKey(ppk_uri, prv_key,pub_key,ResourceKey.DEFAULT_ALGO_TYPE_RSA);
+	    		            	ResourceKey.saveKey(format_id_uri, prv_key,pub_key,RSACoder.KEY_ALGORITHM);
 	    		            	
 	    		            	dialog.dismiss();
-	    				    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_SET_PPK_RESOURCE_KEY ).execute(ppk_uri,pub_key,callback_function);
+	    				    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_SET_PPK_RESOURCE_KEY ).execute(format_id_uri,pub_key,callback_function);
 	    		            }
 	    		        });
 	    				
@@ -1211,7 +1243,7 @@ public class PPkActivity extends Activity
 	    		    				String prv_key = txtSetPrvkey.getText().toString() ;
 	    		    				
 	    		            		JSONObject new_key=new JSONObject();
-	    		            		new_key.put("ppk_uri",ppk_uri);
+	    		            		new_key.put("ppk_uri",format_id_uri);
 	    		            		new_key.put("RSAPublicKey",pub_key);
 	    							new_key.put("RSAPrivateKey",prv_key);
 	    		            	
@@ -1266,11 +1298,13 @@ public class PPkActivity extends Activity
     }
     
     @JavascriptInterface
-    public void signWithPPkResourcePrvKey(final String ppk_uri,final String requester_uri,final String data_hex,final String callback_function){
-    	//Log.d("browser", "signWithPPkResourcePrvKey " + ppk_uri +"," + requester_uri +"," +callback_function);
+    public void signWithPPkResourcePrvKey(String in_uri,final String requester_uri,final String data_hex,final String callback_function){
+    	//Log.d("browser", "signWithPPkResourcePrvKey " + in_uri +"," + requester_uri +"," +callback_function);
     	
     	final AlertDialog dialog;
     	DefaultCancelButtonClickListener cancelButtonClickListener=new DefaultCancelButtonClickListener(callback_function);
+    	
+    	final String ppk_uri=ODIN.formatPPkURI(in_uri);
     	
     	JSONObject obj_key = ResourceKey.getKey(ppk_uri,false);
 		if(obj_key==null) {
@@ -1282,15 +1316,16 @@ public class PPkActivity extends Activity
 	    		
 			dialog.show();
 		}else {
-			final String tmp_private_key= obj_key.optString(ResourceKey.PRIVATE_KEY , "");
-			final String tmp_pub_key= obj_key.optString(ResourceKey.PUBLIC_KEY , "");
+			final String tmp_private_key= obj_key.optString(RSACoder.PRIVATE_KEY , "");
+			final String tmp_pub_key= obj_key.optString(RSACoder.PUBLIC_KEY , "");
 			
-			String tmp_key_algo= obj_key.optString(ResourceKey.ALGO_TYPE , RSACoder.KEY_ALGORITHM); 
-			final String tmp_sign_algo= tmp_key_algo.equalsIgnoreCase(RSACoder.KEY_ALGORITHM) ? RSACoder.DEFAULT_SIGNATURE_ALGORITHM : tmp_key_algo; 
+			String tmp_key_algo= obj_key.optString(ResourceKey.KEY_ALGO , RSACoder.KEY_ALGORITHM); 
+			final String tmp_sign_algo= tmp_key_algo.equalsIgnoreCase(RSACoder.KEY_ALGORITHM) 
+									? RSACoder.DEFAULT_SIGNATURE_ALGORITHM : ResourceKey.SIGN_ALGO_BITCOIN_SIGNMSG; 
 
 			String tmp_sign;
 			try {
-				if( ResourceKey.ALGO_TYPE_ECC_SECP256K1.equalsIgnoreCase(tmp_sign_algo)  ) {
+				if( ResourceKey.SIGN_ALGO_BITCOIN_SIGNMSG.equalsIgnoreCase(tmp_sign_algo)  ) {
 					//ECKey tmp_key=new ECKey();
 					//Log.d("browser", "signPPkResource.tmp_pubkey= " + tmp_key.getPublicKeyAsHex());
 					ECKey tmp_key=ECKey.fromPrivate(Util.hexStringToBytes(tmp_private_key) );
@@ -1479,20 +1514,21 @@ public class PPkActivity extends Activity
     }
     
     @JavascriptInterface
-    public void getPPkResource(final String ppk_uri,final String resp_type,final String callback_function){
-    	Log.d("browser", "getPPkResource " + ppk_uri+","+callback_function);
+    public void getPPkResource(final String input_uri,final String resp_type,final String callback_function){
+    	Log.d("browser", "getPPkResource " + input_uri+","+callback_function);
     	
-    	if( ! PPkURI.isValidPPkURI(ppk_uri)  ){
+    	final String format_ppk_uri=ODIN.formatPPkURI(input_uri);
+    	if( format_ppk_uri ==null ){
     		PeerWebAsyncTask.callbackBeforeExceute(
     				this.webshow,
     				callback_function,
     				PeerWebAsyncTask.STATUS_INVALID_ARGU,
-    				"Not supported uri: "+ppk_uri
+    				"Not supported uri: "+input_uri
     			);
     		return;
     	}
     	
-    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_PPK_RESOURCE ).execute(ppk_uri,resp_type,callback_function);
+    	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_PPK_RESOURCE ).execute(format_ppk_uri,resp_type,callback_function);
     }
   
     public String getPrivateData(String  data_name){
@@ -1530,8 +1566,9 @@ public class PPkActivity extends Activity
         Log.d("browser", "Go to " + destURI);
         
         if (destURI != null){
-            if( PPkURI.isValidPPkURI(destURI) ) {
-                new ShowPPkUriAsyncTask().execute(destURI);
+        	final String format_ppk_uri=ODIN.formatPPkURI(destURI);
+        	if( format_ppk_uri !=null ){
+                new ShowPPkUriAsyncTask().execute(format_ppk_uri);
             }else if(destURI.equalsIgnoreCase(Config.ppkSettingPage )) { 
         		destURI=Config.ppkSettingPageFileURI;
         		webshow.getSettings().setJavaScriptEnabled(true);
@@ -1599,10 +1636,10 @@ public class PPkActivity extends Activity
 	    return true;
     }
     
-    public WebResourceResponse getPPkResource(String ppk_uri){
-        Log.d("browser","getPPkResource: " + ppk_uri);
+    public WebResourceResponse getPPkContent(String ppk_uri){
+        Log.d("browser","getPPkContent: " + ppk_uri);
         WebResourceResponse res = null;
-        JSONObject obj_ap_resp=PPkURI.fetchPPkURI(ppk_uri);
+        JSONObject obj_ap_resp=PTTP.getPPkResource(ppk_uri);
         
         byte[] result_bytes=null;
         String mimeType=null;
@@ -1612,8 +1649,8 @@ public class PPkActivity extends Activity
         	result_bytes="ERROR.Please reload.请刷新重试".getBytes();
         	mimeType="text/html";
         }else {
-	        result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_PPK_CHUNK);
-	        mimeType=obj_ap_resp.optString(Config.JSON_KEY_PPK_CHUNK_TYPE);
+	        result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_CHUNK_BYTES);
+	        mimeType=obj_ap_resp.optString(Config.JSON_KEY_CHUNK_TYPE);
         }
         
         ByteArrayInputStream bis = new ByteArrayInputStream(result_bytes);
@@ -1680,7 +1717,8 @@ public class PPkActivity extends Activity
         weburl.setTextColor(Color.BLACK);
         textStatus.setText("Opening "+url);
         if (url != null) { 
-        	if( PPkURI.isValidPPkURI(url) ) {
+        	final String format_ppk_uri=ODIN.formatPPkURI(url);
+        	if( format_ppk_uri !=null ){
 	            PPkActivity.this.bLoadingHttpPage=false;
 	            
 	            view.stopLoading();
@@ -1715,8 +1753,9 @@ public class PPkActivity extends Activity
       @Override
       public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
         Log.d("browser","loadRes: " + url);
-        if (PPkURI.isValidPPkURI(url)) {
-            return getPPkResource(url);
+        final String format_ppk_uri=ODIN.formatPPkURI(url);
+    	if( format_ppk_uri !=null ){
+            return getPPkContent(url);
         }else{
             return super.shouldInterceptRequest(view,url);
         }
@@ -1775,56 +1814,85 @@ public class PPkActivity extends Activity
         @Override
         protected JSONObject doInBackground(String... params) {
             this.ppkURI=params[0];
-            String result_content=null;
             
-            JSONObject obj_ap_resp=PPkURI.fetchPPkURI(this.ppkURI);
+            JSONObject obj_ap_resp=PTTP.getPPkResource(this.ppkURI);
             return obj_ap_resp;
 
         }
 
         @Override
         protected void onPostExecute(JSONObject result) {
-            String result_uri=null;
-            String from_ap_url=null;
+            String result_uri=this.ppkURI;
+            String str_more_info="";
+            String from_ap_url="";
             String result_content="<h3>ERROR while loading PPk URI. <br>访问PPk网址时出错了<br>URI:  "+ppkURI+"</h3>";;
             String mimeType="text/html";
             String encoding="utf-8";
-            
+
             super.onPostExecute(result);
+            
             if(result!=null){
-                try {
-                	int validcode=result.optInt(Config.JSON_KEY_PPK_VALIDATION,Config.PPK_VALIDATION_ERROR);
-                    if( validcode == Config.PPK_VALIDATION_IGNORED 
-                      || validcode == Config.PPK_VALIDATION_OK ){
-	                    result_uri=result.optString(Config.JSON_KEY_PPK_URI);
-	                    from_ap_url=result.optString(Config.JSON_KEY_PPK_CHUNK_URL);
-	                    mimeType=result.optString(Config.JSON_KEY_PPK_CHUNK_TYPE,mimeType);
-	                    if( mimeType.toLowerCase().startsWith("text") ){
-	                    	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.PPK_TEXT_CHARSET);
-	                    }else if( mimeType.toLowerCase().startsWith("image") ){
-	                    	String image64 = Base64.encodeToString((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK), Base64.DEFAULT);
-	                   	    result_content = "<img src=\"data:"+mimeType+";base64," + image64 + "\" />";
-	                   	    mimeType = "text/html";
+	            try {
+	            	int validcode=result.optInt(Config.JSON_KEY_PPK_VALIDATION,Config.PTTP_VALIDATION_ERROR);
+	                if( validcode == Config.PTTP_VALIDATION_IGNORED 
+	                  || validcode == Config.PTTP_VALIDATION_OK ){
+	                    result_uri=result.optString(Config.JSON_KEY_PPK_URI,"");
+	                    from_ap_url=result.optString(Config.JSON_KEY_CHUNK_URL,"");
+	                    mimeType=result.optString(Config.JSON_KEY_CHUNK_TYPE,mimeType);
+	                    int status_code = result.optInt(Config.PTTP_KEY_STATUS_CODE);
+	                    if(status_code==Config.PTTP_STATUS_CODE_OK){
+	                        if( mimeType.toLowerCase().startsWith("text") ){
+	                            result_content=new String((byte[])result.opt(Config.JSON_KEY_CHUNK_BYTES),Config.PPK_TEXT_CHARSET);
+	                        }else if( mimeType.toLowerCase().startsWith("image") ){
+	                            String image64 = Base64.encodeToString((byte[])result.opt(Config.JSON_KEY_CHUNK_BYTES), Base64.DEFAULT);
+	                            result_content = "<img src=\"data:"+mimeType+";base64," + image64 + "\" />";
+	                            mimeType = "text/html";
+	                        }else{
+	                            //result_content=new String((byte[])result.opt(Config.JSON_KEY_CHUNK_BYTES),Config.BINARY_DATA_CHARSET);
+	                            mimeType = "text/html";
+	                            result_content =  "Not supported content_type: "+result.optString(Config.JSON_KEY_CHUNK_TYPE,"");
+	                        }
+	                    }else if(status_code==301 || status_code==302){
+	                        String dest_url = new String( (byte[])result.opt(Config.JSON_KEY_CHUNK_BYTES) );
+	                        mimeType = "text/html";
+	                        result_content="<html><head><meta http-equiv='refresh' content='2;url="+dest_url+"'></head>Redirecting to "+dest_url+"<html>";
 	                    }else{
-	                    	result_content=new String((byte[])result.opt(Config.JSON_KEY_PPK_CHUNK),Config.BINARY_DATA_CHARSET);
+	                        mimeType = "text/html";
+	                        result_content = status_code+" "+(new String( (byte[])result.opt(Config.JSON_KEY_CHUNK_BYTES) ));
 	                    }
 	                    
-	                    if(validcode == Config.PPK_VALIDATION_OK)
+	                    if(validcode == Config.PTTP_VALIDATION_OK)
 	                    	weburl.setTextColor( Color.rgb(34,139,34) );                   	
-                    }else{
-                    	result_content += "<font color='#F00'>Valiade failed!</font>";
-                    }
-                    
-                    //setTitle(result_uri); //在标题栏临时显示当前实际访问的URI地址
-                    
-                    //String page_title=Util.getPageTitle(result_uri,result_content);
-                    //historylist.addURL(page_title,result_uri);
-                } catch (UnsupportedEncodingException e) {
-                    Log.d("browser","UnsupportedEncodingException:"+e.toString());
-                }
-                
+	                }else{
+	                    mimeType = "text/html";
+	                	result_content += "<font color='#F00'>Valiade failed! 收到签名不一致的内容数据块!</font>";
+	                }
+	                
+	                if(result.optBoolean(Config.JSON_KEY_FROM_CACHE,false)) {
+	                	str_more_info = "CacheOf: "+ from_ap_url;
+	                	str_more_info = "CacheFile: "+ result.optString("debug_cache_file_name");
+	                }else {
+	                	str_more_info = "AP: "+ from_ap_url;
+	                }
+	                
+	                if(Config.debugKey!=0) {
+	                	long exp_utc = result.optLong(Config.JSON_KEY_EXP_UTC);
+	                	str_more_info += "\nDEBUG: VALIDCODE="+validcode
+	                            +" EXP_UTC="+ exp_utc
+	                            +" LEFT_SECONDS="+ ( exp_utc - Util.getNowTimestamp() );
+	                }
+	                
+	                //setTitle(result_uri); //在标题栏临时显示当前实际访问的URI地址
+	                
+	                //String page_title=Util.getPageTitle(result_uri,result_content);
+	                //historylist.addURL(page_title,result_uri);
+	            } catch (Exception e) {
+	                Log.d("browser"," exception:"+e.toString());
+	                result_content = "Exception:"+e.toString();
+	            }
             }
-            textStatus.setText("Loaded PPkURI: "+result_uri + "\nAP: "+from_ap_url);
+            
+            textStatus.setText("Loaded PTTP: "+result_uri + "\n"+str_more_info);
             webshow.loadDataWithBaseURL(result_uri, result_content, mimeType, encoding, this.ppkURI);
 
             progressBar.setVisibility(View.GONE);

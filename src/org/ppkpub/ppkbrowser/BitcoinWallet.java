@@ -23,6 +23,7 @@ import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.DumpedPrivateKey;
 import org.bitcoinj.core.ECKey;
+//import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction.SigHash;
 import org.bitcoinj.core.Sha256Hash;
@@ -202,11 +203,11 @@ public class BitcoinWallet  {
         Util.hexStringToBytes(odin_tx_data.data_hex )
       );
   }
-  
+
   public static Transaction transaction(String source, String destination, BigInteger amount_satoshi, BigInteger fee, String markPubkeyHexStr,byte[] data) throws Exception {
 	  return transaction(source, destination, amount_satoshi, fee, markPubkeyHexStr,data,false);
   }
-  
+
   public static Transaction transaction(String source, String destination, BigInteger amount_satoshi, BigInteger fee, String markPubkeyHexStr,byte[] data,boolean isBitcoinCash) throws Exception {
     Transaction tx = new Transaction(params);
     
@@ -230,9 +231,9 @@ public class BitcoinWallet  {
     }
 
     List<Byte> dataArrayList =  Util.toByteArrayList(data);
-
-
+    
     int odin_data_length = dataArrayList.size();
+    boolean isOdinTransaction = odin_data_length>0; //20200329
 
     BigInteger totalOutput = fee;
     BigInteger totalInput = BigInteger.ZERO;
@@ -245,6 +246,7 @@ public class BitcoinWallet  {
         tx.addOutput(Coin.valueOf(amount_satoshi.longValue()), new Address(params, destination));
       }
     } catch (AddressFormatException e) {
+      throw new Exception("Failed to generate output for "+destination);
     }
 
     ECKey source_key=null; 
@@ -261,10 +263,10 @@ public class BitcoinWallet  {
     }
     
     if(null==source_key)
-       return null;
+       return  null;
 
     //组织多重交易和OpReturn来嵌入所需存放的数据
-    if(odin_data_length>0){
+    if(isOdinTransaction){
       int from = 0;
     
       if(markPubkeyHexStr!=null && markPubkeyHexStr.length()>0) { //如果markPubkeyHexStr参数有效，则表示使用多重签名
@@ -287,7 +289,7 @@ public class BitcoinWallet  {
 	          byte[] tmp_pub_key=Util.generateValidPubkey(Util.toByteArray(chunk));
 	          
 	          if(tmp_pub_key==null){
-	            throw new Exception("Unable to generate valid pubkey for embedding data.Please change your request contents!");
+	              throw new Exception("Unable to generate valid pubkey for embedding data.Please change your request contents!");
 	          }
 	          
 	          keys.add(new ECKey(null,tmp_pub_key));
@@ -312,7 +314,10 @@ public class BitcoinWallet  {
         tx.addOutput(Coin.valueOf(BigInteger.valueOf(0).longValue()), script);
       }
     }
-    List<UnspentOutput> unspents = isBitcoinCash? Util.getBitcoinCashUnspents(source):Util.getUnspents(source);
+    
+    List<UnspentOutput> unspents = isBitcoinCash ? 
+                                       Util.getBitcoinCashUnspents(source) : Util.getUnspents(source,isOdinTransaction);
+                                       
     List<Script> inputScripts = new ArrayList<Script>();      
 
     Boolean atLeastOneRegularInput = false;
@@ -327,8 +332,13 @@ public class BitcoinWallet  {
       //in other words, we sweep up any unused multisig inputs with every transaction
 
       try {
-        if ((script.isSentToAddress() && (totalOutput.compareTo(totalInput)>0 || !atLeastOneRegularInput)) 
-          || (script.isSentToMultiSig() && ((usedUnspents<2 && !atLeastOneRegularInput)||(usedUnspents<3 && atLeastOneRegularInput ) || fee.compareTo(BigInteger.valueOf(Config.maxFee))==0 ) )) {
+        if(
+          unspent.amt_satoshi.compareTo( BigInteger.valueOf(0) ) > 0 //Avoid TX data exception,20200307
+          &&(
+            (script.isSentToAddress() && (totalOutput.compareTo(totalInput)>0 || !atLeastOneRegularInput)) 
+            || (script.isSentToMultiSig() && ((usedUnspents<2 && !atLeastOneRegularInput)||(usedUnspents<3 && atLeastOneRegularInput ) || fee.compareTo(BigInteger.valueOf(Config.maxFee))==0 ) )
+          )
+        ){
           if(
         	   mWallet.getTransaction(new Sha256Hash(txHash))==null || mWallet.getTransaction(new Sha256Hash(txHash)).getOutput(unspent.vout).isAvailableForSpending() 
             ) {
@@ -345,6 +355,8 @@ public class BitcoinWallet  {
             tx.addInput(input);
             arrayInputUnspents.put(unspent);
             inputScripts.add(script);
+            
+            usedUnspents++;  //20200307
           }
         }
                   
@@ -354,6 +366,7 @@ public class BitcoinWallet  {
       } catch (Exception e) {
         Log.d("BitcoinWallet","Error during transaction creation: "+e.toString());
         e.printStackTrace();
+        throw new Exception("Error during transaction creation: "+e.toString());
       }
     }
 
@@ -372,6 +385,7 @@ public class BitcoinWallet  {
         tx.addOutput(Coin.valueOf(totalChange.longValue()), new Address(params, source));
       }
     } catch (AddressFormatException e) {
+      throw new Exception("Failed to generate charge output for "+source);
     }
 
     for (int i = 0; i<tx.getInputs().size(); i++) {
@@ -404,7 +418,7 @@ public class BitcoinWallet  {
 
   public static String sendTransaction(String source, String signed_tx_hex) throws Exception {
 	  Transaction tx = new Transaction( params , Util.hexStringToBytes(signed_tx_hex));
-	  String result=CommonHttpUtil.getInstance().getContentFromUrl(Config.PPK_ROOT_ODIN_PARSE_API_URL+"broadcast.php?hex="+signed_tx_hex);
+	  String result=CommonHttpUtil.getInstance().getContentFromUrl(Config.PPK_API_URL+"broadcast.php?hex="+signed_tx_hex);
 	  
 	  if(result!=null && result.startsWith("OK") ){
 		  cacheLastUnspentTransaction(source,tx);

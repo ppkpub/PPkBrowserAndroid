@@ -16,13 +16,14 @@ public class ResourceKey  {
 
   private static PPkActivity mMainActivity=null;
   
-  public static final String PUBLIC_KEY  = "pub";  
-  public static final String PRIVATE_KEY = "prv";  
-  public static final String ALGO_TYPE   = "type";  
+  //发给外部验证用的签名算法类型
+  public static final String SIGN_ALGO_BITCOIN_SIGNMSG = "BitcoinSignMsg";  
   
-  public static final String DEFAULT_ALGO_TYPE_RSA = RSACoder.KEY_ALGORITHM;  
-  public static final String ALGO_TYPE_ECC_SECP256K1 = "bitcoin_secp256k1";  
+  //本地使用的公钥类型定义
+  public static final String KEY_ALGO   = "key_algo";  
   
+  public static final String KEY_ALGO_ECC_SECP256K1 = "EcdsaSecp256k1";  
+  public static final String KEY_ALGO_ED25519 		= "Ed25519";  
   
   private static JSONObject mObjResKeySet;
   
@@ -76,12 +77,12 @@ public class ResourceKey  {
 	  
   }
   
-  public static boolean saveKey(String res_uri,String prv_key,String pub_key,String algo_type) {
+  public static boolean saveKey(String res_uri,String prv_key,String pub_key,String str_key_algo) {
 	  try {
 		  JSONObject tmp_obj=new JSONObject();
-		  tmp_obj.put(PRIVATE_KEY , prv_key);
-		  tmp_obj.put(PUBLIC_KEY, pub_key);
-		  tmp_obj.put(ALGO_TYPE, algo_type);
+		  tmp_obj.put(RSACoder.PRIVATE_KEY , prv_key);
+		  tmp_obj.put(RSACoder.PUBLIC_KEY, pub_key);
+		  tmp_obj.put(KEY_ALGO, str_key_algo);
 		  
 		  
 		  return saveKey(res_uri,tmp_obj);
@@ -92,8 +93,10 @@ public class ResourceKey  {
   
   public static boolean saveKey(String res_uri,JSONObject obj_key) {
 	  try {
-		  if(PPkURI.isValidPPkURI(res_uri))
-				res_uri=PPkURI.getRealPPkURI(res_uri);
+		  res_uri=ODIN.getRealPPkURI(res_uri);
+		  
+		  if(res_uri==null)
+			  return false;
 		  
 		  mObjResKeySet.put(res_uri,obj_key);
 	  
@@ -106,8 +109,9 @@ public class ResourceKey  {
   
   public static JSONObject getKey(String res_uri,boolean auto_gene_new) {
 	  try {
-		if(PPkURI.isValidPPkURI(res_uri))
-			res_uri=PPkURI.getRealPPkURI(res_uri);
+		res_uri=ODIN.getRealPPkURI(res_uri);
+		if(res_uri==null)
+			return null;
 		  
 		JSONObject tmp_obj=mObjResKeySet.optJSONObject(res_uri);
 		
@@ -122,9 +126,9 @@ public class ResourceKey  {
 	        String privateKey = RSACoder.getPrivateKey(keyMap); 
 	        
 	        tmp_obj=new JSONObject();
-			tmp_obj.put(PRIVATE_KEY , privateKey);
-			tmp_obj.put(PUBLIC_KEY, publicKey);
-			tmp_obj.put(ALGO_TYPE, DEFAULT_ALGO_TYPE_RSA);
+			tmp_obj.put(RSACoder.PRIVATE_KEY , privateKey);
+			tmp_obj.put(RSACoder.PUBLIC_KEY, publicKey);
+			tmp_obj.put(KEY_ALGO, RSACoder.KEY_ALGORITHM);
 			  
 	        //if(!saveKey(res_uri,tmp_obj)) { //待对话框里确认后再保存
 	        //	return null;
@@ -134,9 +138,9 @@ public class ResourceKey  {
 		
 		if( tmp_obj==null) {
 			//尝试用BTC地址私钥
-			JSONObject obj_ap_resp = PPkURI.fetchPPkURI(res_uri);
+			JSONObject obj_ap_resp = PTTP.getPPkResource(res_uri);
 			if(obj_ap_resp!=null) {
-		    	byte[] result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_PPK_CHUNK);
+		    	byte[] result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_CHUNK_BYTES);
 	    		JSONObject obj_res= new JSONObject(new String(result_bytes,Config.PPK_TEXT_CHARSET)) ;
 	    		
 	    		String  exist_register = obj_res.optString("register");
@@ -145,12 +149,11 @@ public class ResourceKey  {
 		    		String vd_set_pubkey= BitcoinWallet.getPubkeyHex(exist_register);
 		    		String vd_set_prvkey= BitcoinWallet.getPrvkeyHex(exist_register);
 		    		if(vd_set_pubkey!=null && vd_set_prvkey!=null) {
-			    		String vd_set_algo=ResourceKey.ALGO_TYPE_ECC_SECP256K1;
 			    		
 						tmp_obj=new JSONObject();
-						tmp_obj.put(PRIVATE_KEY , vd_set_prvkey);
-						tmp_obj.put(PUBLIC_KEY, vd_set_pubkey);
-						tmp_obj.put(ALGO_TYPE, vd_set_algo);	
+						tmp_obj.put(RSACoder.PRIVATE_KEY , vd_set_prvkey);
+						tmp_obj.put(RSACoder.PUBLIC_KEY, vd_set_pubkey);
+						tmp_obj.put(KEY_ALGO, ResourceKey.KEY_ALGO_ECC_SECP256K1);	
 		    		}
 	    		}
 			}
@@ -168,7 +171,7 @@ public class ResourceKey  {
   public static boolean verify(byte[] data, String pubkey_hex, String sign_base64,String sign_algo) {  
   	boolean result=false;
   	try {
-	  if(ALGO_TYPE_ECC_SECP256K1.equalsIgnoreCase( sign_algo ) ) {
+	  if(SIGN_ALGO_BITCOIN_SIGNMSG.equalsIgnoreCase( sign_algo ) ) {
 		  ECKey tmp_key=ECKey.fromPublicOnly(Util.hexStringToBytes(pubkey_hex) );
 		  tmp_key.verifyMessage(new String(data,Config.PPK_TEXT_CHARSET), sign_base64);
 		  result=true;

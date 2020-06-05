@@ -41,6 +41,13 @@ public class UpdateInfoService {
       return this.updateInfo;
   }
   
+  public String getNewstVersion() {
+	  if(updateInfo==null)
+		  return "";
+	  
+	  return updateInfo.optString("version","0");
+  }
+  
   public boolean isNeedUpdate() {
 	  if(updateInfo==null)
 		  return false;

@@ -34,6 +34,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	public final static String TASK_NAME_GET_PPK_RESOURCE="getPPkResource";
 	public final static String TASK_NAME_GET_DEFAULT_SETTING="getDefaultSetting";  
 	public final static String TASK_NAME_SET_DEFAULT_SETTING="setDefaultSetting";  
+	public final static String TASK_NAME_CLEAR_NET_CACHE="clearNetCache";  
 	public final static String TASK_NAME_BACKCUP_DATA="backupPrivateData";  
 
 	public final static String STATUS_OK="OK";
@@ -63,7 +64,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
     protected void onPreExecute() {
         super.onPreExecute();
         Log.d("PeerWebAsyncTask","PreExecute ");
-        if(Config.debugKey){
+        if(Config.debugKey!=0){
 	        String str_info="Calling PeerWeb."+mTaskName;
 	        Toast.makeText(mParentWebview.getContext(), str_info, Toast.LENGTH_SHORT).show();
         }
@@ -84,6 +85,13 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 		    	}else{
 		    		return genRespError(STATUS_INVALID_ARGU,"Not supported coin:"+coin_name); 
 		    	}
+	    	}else if(mTaskName==TASK_NAME_CLEAR_NET_CACHE){
+	    		String clear_domain_limit=params[0];
+		    	js_callback_function=params[1];
+		    	
+		    	NetCache.clearNetCache();
+
+	    		return genRespOK("cleared_domain",clear_domain_limit);
 	    	}else if(mTaskName==TASK_NAME_GET_DEFAULT_SETTING){
 	    		String set_name=params[0];
 		    	js_callback_function=params[1];
@@ -91,9 +99,9 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 		    	String set_value=Config.getUserDefinedSet( set_name);
 
 	    		return genRespOK(set_name,set_value);
-	    	}else if(mTaskName==TASK_NAME_GET_DEFAULT_ODIN){
+	        }else if(mTaskName==TASK_NAME_GET_DEFAULT_ODIN){
 		    	js_callback_function=params[0];
-	    		String odin_uri=Odin.getDefaultOdinURI();
+	    		String odin_uri=ODIN.getDefaultOdinURI();
 	    		return odin_uri==null? 
 	    				genRespError(STATUS_PPK_RESOURCE_NOT_EXIST,"No default odin") :  genRespOK("odin_uri",odin_uri);
 	    	}else if(mTaskName==TASK_NAME_GENERATE_NEW_ADDRESS){
@@ -101,11 +109,11 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 		    	js_callback_function=params[1];
 	    		String tmp_coin_api_uri=coin_name+"create_new_key()#";
 	    		
-	    		JSONObject obj_ap_resp = PPkURI.fetchPPkURI(tmp_coin_api_uri);
+	    		JSONObject obj_ap_resp = PTTP.getPPkResource(tmp_coin_api_uri);
 	    		if(obj_ap_resp==null)
 		    		return genRespError(STATUS_UNKOWN_EXCEPTION,"Failed to get the ppk resource "+tmp_coin_api_uri);
 	    		
-	    		String api_result =new String( (byte[])obj_ap_resp.get(Config.JSON_KEY_PPK_CHUNK));
+	    		String api_result =new String( (byte[])obj_ap_resp.get(Config.JSON_KEY_CHUNK_BYTES));
 	    		Log.d("API",api_result);
 	    		JSONObject tmp_obj_result=new  JSONObject(api_result);
 	    		
@@ -117,7 +125,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    		String resp_type=params[1];
 		    	js_callback_function=params[2];
 		    	
-		    	JSONObject obj_ap_resp = PPkURI.fetchPPkURI(ppk_uri);
+		    	JSONObject obj_ap_resp = PTTP.getPPkResource(ppk_uri);
 		    	if(obj_ap_resp==null)
 		    		return genRespError(STATUS_UNKOWN_EXCEPTION,"Failed to get the ppk resource "+ppk_uri);
 		    	
@@ -127,11 +135,11 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    							);
 	    		}else {//只返回PTTP协议应答的content正文信息
 	    			JSONObject objContent=new JSONObject();
-	    			objContent.put("status_code" ,obj_ap_resp.getString(Config.JSON_KEY_PPK_STATUS_CODE));
-	    			objContent.put("type" ,obj_ap_resp.getString(Config.JSON_KEY_PPK_CHUNK_TYPE));
-	    			objContent.put("length" ,obj_ap_resp.getLong(Config.JSON_KEY_PPK_CHUNK_LENGTH));
-	    			objContent.put("url" ,obj_ap_resp.getString(Config.JSON_KEY_PPK_CHUNK_URL));
-	    			objContent.put("content_base64" ,Base64.encodeToString( (byte[])obj_ap_resp.get(Config.JSON_KEY_PPK_CHUNK), Base64.DEFAULT ));
+	    			objContent.put("status_code" ,obj_ap_resp.getString(Config.PTTP_KEY_STATUS_CODE));
+	    			objContent.put("type" ,obj_ap_resp.getString(Config.JSON_KEY_CHUNK_BYTES));
+	    			objContent.put("length" ,obj_ap_resp.getLong(Config.JSON_KEY_CHUNK_LENGTH));
+	    			objContent.put("url" ,obj_ap_resp.getString(Config.JSON_KEY_CHUNK_URL));
+	    			objContent.put("content_base64" ,Base64.encodeToString( (byte[])obj_ap_resp.get(Config.JSON_KEY_CHUNK_BYTES), Base64.DEFAULT ));
 	    			
 	    			return genRespOK(objContent);
 	    		}
@@ -139,52 +147,61 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 	    		String ppk_uri=params[0];
 		    	js_callback_function=params[1];
 		    	
-		    	JSONObject obj_ap_resp = PPkURI.fetchPPkURI(ppk_uri);
+		    	JSONObject obj_ap_resp = PTTP.getPPkResource(ppk_uri);
 		    	if(obj_ap_resp==null)
 		    		return genRespError(STATUS_UNKOWN_EXCEPTION,"Failed to get the ppk resource "+ppk_uri);
 
 		    	String vd_set_pubkey="";
-		    	String vd_set_algo="";
+		    	String vd_key_algo="";
 	    		
-	    		byte[] result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_PPK_CHUNK);
+	    		byte[] result_bytes=(byte[])obj_ap_resp.opt(Config.JSON_KEY_CHUNK_BYTES);
 	    		JSONObject obj_res= new JSONObject(new String(result_bytes,Config.PPK_TEXT_CHARSET)) ;
 	    		JSONObject exist_vd_set = obj_res.optJSONObject("vd_set");
 	    	    if(exist_vd_set!=null){
-	    	        vd_set_pubkey=exist_vd_set.optString(Config.JSON_KEY_PPK_PUBKEY,"");
-	    	        vd_set_algo=exist_vd_set.optString(Config.JSON_KEY_PPK_ALGO,"");
+	    	        vd_set_pubkey=exist_vd_set.optString(Config.ODIN_SET_VD_PUBKEY,"");
+	    	        vd_key_algo=exist_vd_set.optString(Config.ODIN_SET_VD_TYPE,RSACoder.KEY_ALGORITHM);
 	    	    }else {
 	    	    	//尝试DID
-	    	    	JSONArray tmpDidAuths = obj_res.optJSONArray("authentication");
-	    	    	if(tmpDidAuths!=null) {
-	    	    		exist_vd_set=tmpDidAuths.getJSONObject(0);
-	    	    		if(exist_vd_set!=null) {
-	    	    			vd_set_algo=exist_vd_set.optString("type",RSACoder.KEY_ALGORITHM);
-	    	    			vd_set_pubkey=exist_vd_set.optString("publicKeyHex",exist_vd_set.optString("publicKeyPem",""));
-	    	    			
-	    	    		}
-	    	    	}/*else {
-	    	    		//尝试直接用注册者地址公钥
-	    	    		String  exist_register = obj_res.optString("register");
-	    	    		
-	    	    		vd_set_pubkey= BitcoinWallet.getPubkeyHex(exist_register);
-	    	    		vd_set_algo=ResourceKey.ALGO_TYPE_ECC_SECP256K1;
-	    	    	}*/
+	    	    	JSONObject tmpDidDoc = obj_res.optJSONObject(Config.ODIN_EXT_KEY_DID_DOC);
+	    	    	if(tmpDidDoc!=null) {
+		    	    	JSONArray tmpDidAuths = tmpDidDoc.optJSONArray("authentication");
+		    	    	if(tmpDidAuths!=null) {
+		    	    		exist_vd_set=tmpDidAuths.getJSONObject(0);
+		    	    		if(exist_vd_set!=null) {
+		    	    			vd_key_algo=exist_vd_set.optString("type",ResourceKey.KEY_ALGO_ECC_SECP256K1 );
+		    	    			
+		    	    			if( vd_key_algo.toUpperCase().contains("SECP256K1") )
+		    	    				vd_key_algo = ResourceKey.KEY_ALGO_ECC_SECP256K1;
+		    	    			else if( vd_key_algo.toUpperCase().contains("25519") )
+		    	    				vd_key_algo = ResourceKey.KEY_ALGO_ED25519;
+		    	    			
+		    	    			vd_set_pubkey=exist_vd_set.optString("publicKeyHex",exist_vd_set.optString("publicKeyPem",""));
+		    	    			
+		    	    		}
+		    	    	}/*else {
+		    	    		//尝试直接用注册者地址公钥
+		    	    		String  exist_register = obj_res.optString("register");
+		    	    		
+		    	    		vd_set_pubkey= BitcoinWallet.getPubkeyHex(exist_register);
+		    	    		vd_set_algo=ResourceKey.KEY_ALGO_ECC_SECP256K1;
+		    	    	}*/
+	    	    	}
 	    	    }
 	    	    
-	    	    if(vd_set_pubkey!=null && vd_set_pubkey.length()>0)
-	    	    	vd_set_pubkey=RSACoder.parseValidPubKey(vd_set_algo,vd_set_pubkey);
+	    	    //if(vd_set_pubkey!=null && vd_set_pubkey.length()>0)
+	    	    //	vd_set_pubkey=RSACoder.parseValidPubKey(vd_set_pubkey);
 	    	    
 	    	    String local_pub_key="";
 	    	    String local_algo="";
 	    	    JSONObject obj_local_key = ResourceKey.getKey(ppk_uri,false);
 	    		if(obj_local_key!=null) {
-	    			local_pub_key=obj_local_key.optString(ResourceKey.PUBLIC_KEY , "");
-	    			local_algo=obj_local_key.optString(ResourceKey.ALGO_TYPE, "");
+	    			local_pub_key=obj_local_key.optString(RSACoder.PUBLIC_KEY , "");
+	    			local_algo=obj_local_key.optString(ResourceKey.KEY_ALGO, RSACoder.KEY_ALGORITHM);
 	    		}
     			
 	    	    JSONObject objContent=new JSONObject();
     			objContent.put("res_uri" ,ppk_uri);
-    			objContent.put("online_algo",vd_set_algo);
+    			objContent.put("online_algo",vd_key_algo);
     			objContent.put("online_pubkey",vd_set_pubkey);
     			objContent.put("local_algo",local_algo);
     			objContent.put("local_pubkey",local_pub_key);
@@ -388,7 +405,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
         String tmp_obj_json = (obj_data==null) ? "null" : obj_data.toString();
         
         Log.d("PeerWebAsyncTask","onPostExecute result='"+status+"',"+ tmp_obj_json);
-        if(!status.equalsIgnoreCase(STATUS_OK) || Config.debugKey){
+        if(!status.equalsIgnoreCase(STATUS_OK) || Config.debugKey!=0){
 	        String str_info="PeerWeb."+mTaskName+" resp : '"+status+"',"+ tmp_obj_json;
 	        Toast.makeText(mParentWebview.getContext(), str_info, Toast.LENGTH_SHORT).show();
         }

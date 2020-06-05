@@ -17,7 +17,7 @@ import org.json.JSONException;
 
 import android.util.Log;
 
-import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
+//import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 
 public class APoverETH {
   public static String fetchInterest(String ap_url, String interest) {
@@ -38,7 +38,7 @@ public class APoverETH {
     mapEthNetworkJsonRPCs.put("infuranet","https://infuranet.infura.io/2M0Ezt8fWNsDZ6wLOAaT");
     mapEthNetworkJsonRPCs.put("kovan","https://kovan.infura.io/2M0Ezt8fWNsDZ6wLOAaT");
     mapEthNetworkJsonRPCs.put("rinkeby","https://rinkeby.infura.io/2M0Ezt8fWNsDZ6wLOAaT");
-    
+    /*
     JsonRpcHttpClient client;
     try {
         //Parse the ap_url like "ethap:rinkeby/0x5c65aab68834c518460a77b32daf5be6ce9fcad7/0xd3317d25"
@@ -103,7 +103,7 @@ public class APoverETH {
     }catch (Throwable e) {
     	Log.d("APoverETH-ERROR","APoverETH.fetchInterest() error: "+e.toString());
     }
-
+    */
     System.out.println("APoverETH.fetchInterest() str_ap_resp_json:"+str_ap_resp_json);
     return str_ap_resp_json;
   }

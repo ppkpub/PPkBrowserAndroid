@@ -5,6 +5,8 @@ import java.util.Map;
 
 import com.squareup.okhttp.*; //okhttp2
 
+import android.util.Log;
+
 public final class CommonHttpUtil {
 	private OkHttpClient client = new OkHttpClient();
 	
@@ -30,9 +32,30 @@ public final class CommonHttpUtil {
     public String getContentFromUrl(String url) {
         try{
             Request request = new Request.Builder().url(url).build();
-            return  client.newCall(request).execute().body().string();
-        }catch(IOException e){
-            e.printStackTrace();
+            //return  client.newCall(request).execute().body().string();
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful()) {
+                return "ServerError: " + response;
+            }
+         
+            return response.body().string();
+            
+        }catch(Exception e){
+            //e.printStackTrace();
+            Log.d("CommonHttpUtil","getContentFromUrl("+url+") error:"+e.toString());
+            return null;
+        }
+    }
+    
+    public Response getFullResponseFromUrl(String url) {
+        try{
+            Request request = new Request.Builder().url(url).build();
+            //return  client.newCall(request).execute().body().string();
+            Response response = client.newCall(request).execute();
+            
+            return response;
+        }catch(Exception e){
+            Log.d("CommonHttpUtil","getFullResponseFromUrl("+url+") error:"+e.toString());
             return null;
         }
     }

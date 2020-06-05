@@ -108,6 +108,13 @@
   </div>
   
   <div class="form-group">
+    <label for="standard_fee_satoshi" class="col-sm-2 control-label">网络内容缓存</label>
+    <div class="col-sm-10" align="right">
+      <button type="text" id="btn_clear_net_cache"  class="btn btn-danger" onclick='clearNetCache();'>清除缓存</button>
+    </div>
+  </div>
+  
+  <div class="form-group">
     <label for="odin_tool_url" class="col-sm-2 control-label">主页网址</label>
     <div class="col-sm-10" align="right">
       <input type="text" class="form-control" placeholder="" id="homepage_uri" value="ppk:0/" readonly > <button type="text" id="btn_set_homepage"  class="btn btn-success" onclick='setHomePage();'>修改主页</button>
@@ -226,11 +233,13 @@ function setBtcStandardFeeSatoshi(){
 function callback_getStandardFeeSatoshi(status,obj_data){
     if('OK'==status){
         //alert("obj_data.StandardFeeSatoshi="+obj_data.StandardFeeSatoshi);
-        if(obj_data.StandardFeeSatoshi!=null && Math.round(obj_data.StandardFeeSatoshi)>=500 && Math.round(obj_data.StandardFeeSatoshi)<=50000){
+        if(obj_data.StandardFeeSatoshi!=null){
+          if(Math.round(obj_data.StandardFeeSatoshi)>=500 && Math.round(obj_data.StandardFeeSatoshi)<=50000){
             MIN_FEE_SATOSHI=Math.round(obj_data.StandardFeeSatoshi);
             document.getElementById("btc_standard_fee_satoshi").innerHTML=""+MIN_FEE_SATOSHI;
-        }else{
+          }else{
             alert("无效的矿工费用数值，请重新设置！\n默认为1000，可设范围为500-50000。\n给矿工的费用越高，交易会被更优先确认收录到区块链上。");
+          }
         }
     }
 }
@@ -247,6 +256,20 @@ function callback_getHomepage(status,obj_data){
         if(obj_data.Homepage!=null){
             document.getElementById("homepage_uri").value=obj_data.Homepage;
         }
+    }
+}
+
+function clearNetCache(){
+    PeerWeb.clearNetCache(
+            'ALL',
+            'callback_clearNetCache'  //回调方法名称
+        );
+}
+
+function callback_clearNetCache(status,obj_data){
+    if('OK'!=status){
+       //出错提示
+       alert("清理缓存出错！\n" + status + ":" + ( typeof(obj_data.errdesc) !== 'undefined' ? obj_data.errdesc:"未知原因" ) );
     }
 }
 
@@ -296,7 +319,13 @@ function callback_getBtcAddressSummary(status,obj_data){
     if('OK'==status){
         if(obj_data!=null){
             if(typeof(obj_data.balance_satoshi) !== 'undefined'){
-                document.getElementById("btc_address_summary").innerHTML="余额:"+ (obj_data.balance_satoshi/BTC_SATOSHI_UNIT)+" BTC";
+                var tmpstr = "余额:"+ (obj_data.balance_satoshi/BTC_SATOSHI_UNIT)+" BTC";
+                if(obj_data.balance_satoshi<3000){
+                    tmpstr += "(不足)";
+                }else if(obj_data.balance_satoshi>20000){
+                    tmpstr += "(过多！)";
+                }
+                document.getElementById("btc_address_summary").innerHTML = tmpstr;
             }
             if(typeof(obj_data.register_num) !== 'undefined'){
                 document.getElementById("odin_register_num").innerHTML=obj_data.register_num;
