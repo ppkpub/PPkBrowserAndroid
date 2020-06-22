@@ -4,10 +4,6 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 
-import org.json.JSONObject;
-
-import com.squareup.okhttp.Response;
-
 import java.io.InputStream;
 
 import android.util.Log;

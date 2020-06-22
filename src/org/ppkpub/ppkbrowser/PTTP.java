@@ -632,16 +632,14 @@ public class PTTP {
     
     String str_interest=objInterest.toString( );
     */
-    String str_interest=uri;//简化的请求格式
+	String str_interest=uri;//简化的请求格式
     String str_ap_resp_json=null;
     if( ap_url.toLowerCase().startsWith("http:") || ap_url.toLowerCase().startsWith("https:")){
       str_ap_resp_json = APoverHTTP.fetchInterest(ap_url,str_interest);
-    }else if( ap_url.toLowerCase().startsWith("ethap:")){
-      str_ap_resp_json = APoverETH.fetchInterest(ap_url,str_interest);
     }else if( ap_url.toLowerCase().startsWith(Config.PPK_URI_PREFIX)){
-      //对于ppk:  起始的ap的处理，需要先再解析到其指向ap节点，再请求
-      //存在循环锁的可能，暂时不支持
-      Log.d("PTTP","fetchAndValidationAP( ) meet unsupported AP URL: "+ap_url);
+      str_ap_resp_json = APoverPTTP.fetchInterest(ap_url,str_interest);
+	}else if( ap_url.toLowerCase().startsWith("ethap:")){
+      str_ap_resp_json = APoverETH.fetchInterest(ap_url,str_interest);
     }else {
       str_ap_resp_json = Util.fetchUriContent(ap_url);
     }
