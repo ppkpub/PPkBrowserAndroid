@@ -130,9 +130,7 @@ public class PeerWebAsyncTask extends AsyncTask<String, Void, JSONObject>{
 		    		return genRespError(STATUS_UNKOWN_EXCEPTION,"Failed to get the ppk resource "+ppk_uri);
 		    	
 	    		if("full".equalsIgnoreCase(resp_type) ) { //返回PTTP协议原始应答数据包
-	    			return genRespOK("full_resp_json",
-	    							 obj_ap_resp.getString(Config.JSON_KEY_ORIGINAL_RESP )
-	    							);
+	    			return genRespOK( new JSONObject(obj_ap_resp.getString(Config.JSON_KEY_ORIGINAL_RESP )) );
 	    		}else {//只返回PTTP协议应答的content正文信息
 	    			JSONObject objContent=new JSONObject();
 	    			objContent.put("status_code" ,obj_ap_resp.getString(Config.PTTP_KEY_STATUS_CODE));

@@ -147,7 +147,7 @@ public class PTTP {
         }
       }
 
-      obj_decoded_chunk.remove(Config.JSON_KEY_ORIGINAL_RESP);
+      //obj_decoded_chunk.remove(Config.JSON_KEY_ORIGINAL_RESP); //deled by chh,20200629
     }catch (Exception e) {
       Log.d("PTTP","getPPkContent("+ppk_uri+") error: "+e.toString());
       e.printStackTrace();
@@ -311,7 +311,7 @@ public class PTTP {
             ap_set.put("0",default_ap);
             
             default_url = "https://"+root_odin+"/";
-            default_ap.put("url","http://"+root_odin+"/");
+            default_ap.put("url",default_url);
             ap_set.put("1",default_ap);
             
             odin_set.put("ap_set",ap_set);

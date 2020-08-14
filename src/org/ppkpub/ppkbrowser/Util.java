@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -375,7 +377,7 @@ public class Util {
             tempObject=fetchBtcAPI(api_url);
             
             total_count=tempObject.getJSONObject("data").getInt("total_count");
-            int pagesize=tempObject.getJSONObject("data").getInt("pagesize");
+            int pagesize=tempObject.getJSONObject("data").getInt("page_size");
             JSONArray tempArray=tempObject.getJSONObject("data").getJSONArray("list");
             
             if( tempArray.length()<pagesize )
@@ -545,7 +547,7 @@ public class Util {
        	tempObject=new JSONObject(result);
 
        	Integer total_count=tempObject.getJSONObject("data").getInt("total_count");
-        Integer pagesize=tempObject.getJSONObject("data").getInt("pagesize");
+        Integer pagesize=tempObject.getJSONObject("data").getInt("page_size");
         JSONArray utxoArray=tempObject.getJSONObject("data").getJSONArray("list");
 
         if(total_count>pagesize ){
@@ -796,4 +798,10 @@ public class Util {
     return (new Date()).getTime()/(long)1000;
   }
   
+  //将异常的完整堆栈追踪信息保存到字符串中
+  public static String printStackTraceToString(Throwable t) {
+  	StringWriter sw = new StringWriter();
+  	t.printStackTrace(new PrintWriter(sw, true));
+  	return sw.getBuffer().toString();
+  }
 }

@@ -41,7 +41,7 @@ public class Config {
   
   public static String developeVersion  = "" ; //空字符串时表示为正式版本，开发版本取值注意加上:字符，如:01
   public static String developeVersionUpdateURL   = "http://tool.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
-  //public static String developeVersionUpdateURL   = "http://192.168.43.55:8081/autoupdate/ppkbrowser/version_local.json";
+  //public static String developeVersionUpdateURL   = "http://192.168.62.99/autoupdate/ppkbrowser/version_local.json";
 
   public static String version = stableVersion + developeVersion;
   

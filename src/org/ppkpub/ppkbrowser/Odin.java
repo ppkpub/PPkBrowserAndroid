@@ -258,40 +258,38 @@ public class ODIN {
 
       return formatPPkURI( uri )  ;
   }
-  
-  //调用PPk API service来获得根标识的设置
+
   public static JSONObject getRootOdinSet(String root_odin)  {
-	String str_req_uri = Config.PPK_URI_PREFIX+root_odin+Config.PPK_URI_RESOURCE_MARK;
-	//String interest="{\"ver\":1,\"hop_limit\":6,\"interest\":{\"uri\":\""+str_req_uri+"\"}}";
-	
-	String str_ap_resp_json=APoverHTTP.fetchInterest(Config.PPK_API_URL,  str_req_uri);
-	
-    try {
-    	JSONObject  parent_vd_set=null;
-    	
-    	if(Config.PPK_API_PUBKEY_PEM.length()>0){
-    		parent_vd_set=new JSONObject();
-    		parent_vd_set.put(Config.ODIN_SET_VD_TYPE, Config.ODIN_SET_VD_ENCODE_TYPE_PEM);
-    		parent_vd_set.put(Config.ODIN_SET_VD_PUBKEY, Config.PPK_API_PUBKEY_PEM);
-    	}
-    	JSONObject tmp_resp = PTTP.parseRespOfPTTP(Config.PPK_API_URL,str_ap_resp_json,str_req_uri,parent_vd_set);   
+		String str_req_uri = Config.PPK_URI_PREFIX+root_odin+Config.PPK_URI_RESOURCE_MARK;
+		//String interest="{\"ver\":1,\"hop_limit\":6,\"interest\":{\"uri\":\""+str_req_uri+"\"}}";
 		
-		if(tmp_resp==null || tmp_resp.optInt(Config.JSON_KEY_PPK_VALIDATION,Config.PTTP_VALIDATION_ERROR) == Config.PTTP_VALIDATION_ERROR ){
-			return null;
-        }else{
-        	byte[] api_content_bytes= (byte[])tmp_resp.opt(Config.JSON_KEY_CHUNK_BYTES) ;
-        	String str_resp_setting = new String( api_content_bytes );
-              
-            return new JSONObject( str_resp_setting  );
-        }
-	} catch (JSONException e) {
-		Log.d("Odin-Exception",e.toString());
-	}
-    
-    return null;
-     
-  }
-  
+		String str_ap_resp_json=APoverHTTP.fetchInterest(Config.PPK_API_URL,  str_req_uri);
+		
+	    try {
+	    	JSONObject  parent_vd_set=null;
+	    	
+	    	if(Config.PPK_API_PUBKEY_PEM.length()>0){
+	    		parent_vd_set=new JSONObject();
+	    		parent_vd_set.put(Config.ODIN_SET_VD_TYPE, Config.ODIN_SET_VD_ENCODE_TYPE_PEM);
+	    		parent_vd_set.put(Config.ODIN_SET_VD_PUBKEY, Config.PPK_API_PUBKEY_PEM);
+	    	}
+	    	JSONObject tmp_resp = PTTP.parseRespOfPTTP(Config.PPK_API_URL,str_ap_resp_json,str_req_uri,parent_vd_set);   
+			
+			if(tmp_resp==null || tmp_resp.optInt(Config.JSON_KEY_PPK_VALIDATION,Config.PTTP_VALIDATION_ERROR) == Config.PTTP_VALIDATION_ERROR ){
+				return null;
+	        }else{
+	        	byte[] api_content_bytes= (byte[])tmp_resp.opt(Config.JSON_KEY_CHUNK_BYTES) ;
+	        	String str_resp_setting = new String( api_content_bytes );
+	              
+	            return new JSONObject( str_resp_setting  );
+	        }
+		} catch (JSONException e) {
+			Log.d("Odin-Exception",e.toString());
+		}
+	    
+	    return null;
+   }
+
   public static void init(PPkActivity main_activity ) {
 	  mMainActivity=main_activity;
 
