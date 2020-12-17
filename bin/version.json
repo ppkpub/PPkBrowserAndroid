@@ -1,1 +1,1 @@
-{"version":"0.5.3","description":"1.更新获取BTC/BCH UTXO记录的API处理","download_list":["http://tool.ppkpub.org/PPkBrowser.apk","http://ppkpub.org/PPkBrowserAndroid/bin/PPkBrowser.apk"]}
+{"version":"0.5.5","description":"1.在BTC和BCH转账界面支持输入奥丁号来转账；\n2.增加可选的奥丁号管理工具服务节点，提高访问速度","download_list":["http://tool.ppkpub.org/PPkBrowser.apk","http://ppkpub.org/PPkBrowserAndroid/bin/PPkBrowser.apk"]}
