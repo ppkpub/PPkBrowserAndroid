@@ -1,1 +1,1 @@
-{"version":"0.5.5","description":"1.在BTC和BCH转账界面支持输入奥丁号来转账；\n2.增加可选的奥丁号管理工具服务节点，提高访问速度","download_list":["http://tool.ppkpub.org/PPkBrowser.apk","http://ppkpub.org/PPkBrowserAndroid/bin/PPkBrowser.apk"]}
+{"version":"0.5.5","description":"1.主界面和设置里增加收款码功能入口;\n2.支持点击paytoppk:链接打开PPk应用来支付BTC/BCH等;\n3.支持点击bitcoin:链接打开本机安装的比特币钱包app;\n4.JS接口增加删除指定资源缓存;\n5.修正缓存中文乱码问题 ","download_list":["http://47.114.169.156/download/PPkBrowser.apk","http://tool.ppkpub.org/download/PPkBrowser.apk"]}
