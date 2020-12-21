@@ -325,8 +325,9 @@ public class PTTP {
         String cache_as_latest =  Config.DEFAULT_CACHE_AS_LATEST ;
         
         String pns_url = odin_set.optString(Config.ODIN_BASE_SET_PNS_URL,"").trim();
-        if(pns_url.length()>0){
-            //设置了有效的标识托管服务
+        String pns_parser = odin_set.optString(Config.ODIN_BASE_SET_PNS_PARSER,"").trim();
+        if(pns_url.length()>0 && pns_parser.length()==0 ){
+            //设置了有效的标识托管服务且尚未被调用解析
             JSONObject merged_odin_set = resolvePeerNameServiceForRootODIN( pns_url,  obj_uri_parts.format_uri, odin_set );
             
             if(merged_odin_set!=null){
@@ -427,7 +428,7 @@ public class PTTP {
       try{
         String ap_resp_ppk_uri = obj_decoded_chunk.optString(Config.JSON_KEY_PPK_URI);
         
-        ap_resp_ppk_uri = ODIN.formatPPkURI(ap_resp_ppk_uri);
+        ap_resp_ppk_uri = ODIN.formatPPkURI(ap_resp_ppk_uri,true);
         if(ap_resp_ppk_uri==null) //不规范的URI将不被缓存
             return false;
         
@@ -885,7 +886,7 @@ public class PTTP {
         String str_original_ap_data_json
   ){
     try{
-        str_uri = ODIN.formatPPkURI(str_uri);
+        str_uri = ODIN.formatPPkURI(str_uri,true);
         
         JSONObject obj_decoded_chunk = new JSONObject();
         

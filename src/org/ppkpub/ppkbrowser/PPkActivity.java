@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.params.MainNetParams;
 import org.json.JSONException;
@@ -50,6 +51,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -63,6 +65,7 @@ public class PPkActivity extends Activity
     private MyWebChromeClient mWebChromeClient;
     private ImageButton buttonGo;
     private ImageButton buttonScan;
+    private ImageButton buttonPay;
     private ImageButton buttonBack;
     private ImageButton buttonForward;
     private ImageButton buttonStop;
@@ -74,7 +77,8 @@ public class PPkActivity extends Activity
     
     private ImageButton buttonStar; //最新动态按钮
     
-    private TextView    textStatus;
+    private LinearLayout    panelBottomButtons;
+    private TextView    	textStatus;    
     
     private UpdateInfoService updateInfoService; //版本更新检查
     
@@ -101,12 +105,16 @@ public class PPkActivity extends Activity
         ResourceKey.init(this);
         PeerWebAsyncTask.init(this);
         
+        if(Config.enableP2P)
+        	P2PAsyncTask.init(this);
+        
         setContentView(R.layout.activity_ppk);
 
         setTitle(Config.appName+" V"+Config.version);
 
         progressBar = (ProgressBar) findViewById(R.id.progressBarLoadPage);
         progressBar.setVisibility(View.GONE);
+        panelBottomButtons = (LinearLayout) findViewById(R.id.panelBottomButtons);
         textStatus = (TextView) findViewById(R.id.textStatus);
         
         weburl = (EditText) findViewById(R.id.weburl);
@@ -116,27 +124,27 @@ public class PPkActivity extends Activity
         webshow.setOnScrollChangeListener(new MyWebView.OnScrollChangeListener() {
             @Override
             public void onPageEnd(int l, int t, int oldl, int oldt) {
-                Log.d("browser","已经到达地端");
+                Log.d("browser","已经到达底端");
                 //Toast.makeText(webshow.getContext(), "已经到达底端" , 0).show();
+                //panelBottomButtons.setVisibility(View.VISIBLE);
             }
 
             @Override
             public void onPageTop(int l, int t, int oldl, int oldt) {
                 Log.d("browser","已经到达顶端");
                 textStatus.setVisibility(View.VISIBLE);
+                panelBottomButtons.setVisibility(View.VISIBLE);
             }
 
             @Override
             public void onScrollChanged(int l, int t, int oldl, int oldt) {
-            	textStatus.setVisibility(View.GONE);
-            	/*
             	int dy=t-oldt;
             	if(dy>10) {//往下滚动一定距离
-            		
+            		textStatus.setVisibility(View.GONE);
+                	panelBottomButtons.setVisibility(View.GONE);
             	}else if(dy<-10) { //往上滚动一定距离
-            		
+                	panelBottomButtons.setVisibility(View.VISIBLE);
             	}
-            	*/
             }
         });
 
@@ -168,9 +176,6 @@ public class PPkActivity extends Activity
             }
         });
         
-        gotoURI( Config.ppkDefaultHomepage );
-        //gotoURI( Config.ppkHotURI ); //缺省显示“精彩推荐”
-        
         buttonGo = (ImageButton) findViewById(R.id.buttonGo);
         buttonGo.setOnClickListener(new View.OnClickListener()
         {
@@ -192,6 +197,16 @@ public class PPkActivity extends Activity
             	Intent intent = new Intent(PPkActivity.this,
 						CaptureActivity.class);
 				startActivityForResult(intent, REQUEST_CODE_SCAN);
+            }
+        });
+        
+        buttonPay = (ImageButton) findViewById(R.id.buttonPay);
+        buttonPay.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+            	gotoURI(Config.ppkPayPage);
             }
         });
         
@@ -259,9 +274,6 @@ public class PPkActivity extends Activity
             @Override
             public void onClick(View view)
             {
-                //gotoURI("https://blockchain.info/unspent?active="+BitcoinWallet.getDefaultAddress()) ;
-            	//gotoURI("http://192.168.62.99:12345/odin?address="+BitcoinWallet.getDefaultAddress()) ;
-            	//gotoURI("http://btmdemo.ppkpub.org/odin/test/?address="+BitcoinWallet.getDefaultAddress()) ;
             	gotoURI(Config.ppkSettingPage);
             }
         });
@@ -281,8 +293,46 @@ public class PPkActivity extends Activity
         	setLocalDataProtectedPassword();
         }
         
-        //检查新版本
-        checkUpdate();
+        //启动P2P
+        if(Config.enableP2P)
+        	new P2PAsyncTask( webshow,P2PAsyncTask.TASK_START  ).execute("",null);
+        
+        
+        /*
+        Log.e(TAG, "scheme:" +intent.getScheme());
+        Uri uri =intent.getData();
+        Log.e(TAG, "scheme: "+uri.getScheme());
+        Log.e(TAG, "host: "+uri.getHost());
+        Log.e(TAG, "port: "+uri.getPort());
+        Log.e(TAG, "path: "+uri.getPath());
+        Log.e(TAG, "queryString: "+uri.getQuery());
+        Log.e(TAG, "queryParameter: "+uri.getQueryParameter("key"));
+        */
+        //检测是否为scheme协议链接跳转过来
+        try {
+	        Intent intent =getIntent();
+	        if(intent!=null) {
+	            String in_uri=intent.getStringExtra("uri"); //APP内部Activity间传递的值
+	            if(in_uri==null) {	             
+	            	Uri obj_uri =intent.getData(); //APP外部通过Scheme协议传递的值
+	            	if(obj_uri!=null) {
+	            		in_uri = obj_uri.toString();
+		        		//Toast.makeText(PPkActivity.this, "scheme="+intent.getScheme()+"  in_uri="+in_uri, Toast.LENGTH_SHORT).show();
+		        	}
+	            }
+	        	if(in_uri!=null) {
+	        		gotoURI( in_uri );
+	        	}else {
+	        		//检查新版本
+	                checkUpdate();
+	                
+	        		gotoURI( Config.ppkDefaultHomepage );
+	                //gotoURI( Config.ppkHotURI ); //缺省显示“精彩推荐”
+	        	}
+	        }
+        }catch(Exception e) {
+        	Toast.makeText(PPkActivity.this, "scheme error:  "+e.toString(), Toast.LENGTH_SHORT).show();
+        }
     }
     
     
@@ -306,12 +356,12 @@ public class PPkActivity extends Activity
     @SuppressLint("HandlerLeak")
 	private Handler handlerUpdateService = new Handler() {
 	    public void handleMessage(Message msg) {
-	    	Toast.makeText(PPkActivity.this, "最新版本:"+updateInfoService.getNewstVersion(), Toast.LENGTH_SHORT).show();
-	    	
 	        if (updateInfoService.isNeedUpdate()) {
             	Intent intent = new Intent(PPkActivity.this,
 						UpdateActivity.class);
 				startActivityForResult(intent, REQUEST_CODE_SCAN);
+	        }else {
+	        	Toast.makeText(PPkActivity.this, "已是最新版本:"+updateInfoService.getNewstVersion(), Toast.LENGTH_SHORT).show();
 	        }
 	    }
 	};
@@ -424,25 +474,43 @@ public class PPkActivity extends Activity
         	
         	AlertDialog dialog;
         	
+        	
+        	String formated_tx_argus_json_hex=null;
         	JSONObject obj_tx_argus;
         	String source=null;
-        	String destination=null;
+        	String destination_info=null;
         	BigDecimal amount_btc=null;
         	BigDecimal fee_btc=null;
         	
         	Long amount_satoshi=0L;
         	try {
 				obj_tx_argus=new JSONObject( new String( Util.hexStringToBytes(tx_argus_json_hex) ) );
-				source=obj_tx_argus.getString("source");
-				destination=obj_tx_argus.getString("destination");
-				amount_satoshi=obj_tx_argus.getLong("amount_satoshi");
-				amount_btc=new BigDecimal(obj_tx_argus.getLong("amount_satoshi")).divide(new BigDecimal(Config.btc_unit));
-				fee_btc=new BigDecimal(obj_tx_argus.getLong("fee_satoshi")).divide(new BigDecimal(Config.btc_unit));
+
+				String destination = obj_tx_argus.getString("destination");
+				String formated_destination=CoinDefine.formatCoinAddress( destination,coin_name) ;
+				
+				//Toast.makeText(webshow.getContext(), destination+" -> "+formated_destination, Toast.LENGTH_SHORT).show();
+				
+				if(formated_destination.length()>0) {
+					if( destination.equals(formated_destination) ) {
+						destination_info=destination;
+					}else {
+						obj_tx_argus.put("destination", formated_destination);
+						destination_info=formated_destination+"\n( "+ destination+" )";
+					}
+					
+					source=obj_tx_argus.getString("source");
+					amount_satoshi=obj_tx_argus.getLong("amount_satoshi");
+					amount_btc=new BigDecimal(obj_tx_argus.getLong("amount_satoshi")).divide(new BigDecimal(Config.btc_unit));
+					fee_btc=new BigDecimal(obj_tx_argus.getLong("fee_satoshi")).divide(new BigDecimal(Config.btc_unit));
+					
+					formated_tx_argus_json_hex = Util.bytesToHexString(obj_tx_argus.toString().getBytes( Config.PPK_TEXT_CHARSET ) );
+				}
 			} catch (Exception e) {
-				obj_tx_argus=null;
+				formated_tx_argus_json_hex=null;
 			}        	
         	
-        	if(obj_tx_argus==null){
+        	if(formated_tx_argus_json_hex==null){
         		dialog = new AlertDialog.Builder(this)
     			    .setTitle("提示")
     				.setNegativeButton("关闭", cancelButtonClickListener)
@@ -452,6 +520,9 @@ public class PPkActivity extends Activity
         		JSONObject obj_coin_def = CoinDefine.getCoinDefine(coin_name);
         		String coin_label_cn=obj_coin_def.optString("label_cn",coin_name);
         		String coin_symbol=obj_coin_def.optString("symbol",coin_name);
+        		
+        		final String final_tx_argus_json_hex=formated_tx_argus_json_hex;
+        		
     			dialog = new AlertDialog.Builder(this)
     			    .setTitle("确认发送"+coin_label_cn+"交易吗?")
     				.setNegativeButton("取消", cancelButtonClickListener)
@@ -459,13 +530,14 @@ public class PPkActivity extends Activity
     					@Override
     					public void onClick(DialogInterface dialog, int which) {
     						//处理确认按钮的点击事件
-    						new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_SIGNED_TX  ).execute(coin_name,tx_argus_json_hex,callback_function);
+    						new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_SIGNED_TX  ).execute(coin_name,final_tx_argus_json_hex,callback_function);
     					}
     				})
     				.setMessage("确认发送下述"+coin_label_cn+"交易吗?"
     				         +"\n发送地址：\n"+source
-    						 +"\n目标地址：\n"+destination
+    						 +"\n目标地址：\n"+destination_info
     						 +"\n交易金额："+amount_btc+" "+ coin_symbol 
+    						 //+"\n       "+amount_satoshi+" satoshi" 
     						 +"\n矿工费用："+fee_btc+" "+ coin_symbol
     						 +"\n请注意该交易一旦发出，将无法撤销！")
     				.create();
@@ -537,6 +609,8 @@ public class PPkActivity extends Activity
 	            	String result_set_value = txtSetValue.getText().toString() ;
 	            	if(Config.saveUserDefinedSet( result_set_name, result_set_value)) {
 		            	dialog.dismiss();
+		            	Toast.makeText(webshow.getContext(), "设置项("+result_set_name+")已修改成功",Toast.LENGTH_SHORT)
+		                .show();
 		            	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_DEFAULT_SETTING ).execute(result_set_name,callback_function);
 	            	}else {
 	            		Toast.makeText(v.getContext(), "保存配置出错，请检查后重试！",Toast.LENGTH_SHORT)
@@ -587,6 +661,21 @@ public class PPkActivity extends Activity
     }
     
     @JavascriptInterface
+    public void setPPkPayAsHomePage(final String callback_function){
+    	Log.d("browser", "setPPkPayAsHomePage "+callback_function);
+    	
+    	if(Config.saveUserDefinedSet( "Homepage", "about:pay")) {
+    		Toast.makeText(webshow.getContext(), "主页已修改成功",Toast.LENGTH_SHORT)
+            .show();
+        	new PeerWebAsyncTask( webshow,PeerWebAsyncTask.TASK_NAME_GET_DEFAULT_SETTING ).execute("Homepage",callback_function);
+    	}else {
+    		Toast.makeText(webshow.getContext(), "保存配置出错，请检查后重试！",Toast.LENGTH_SHORT)
+             .show();
+    	}
+    
+    }
+    
+    @JavascriptInterface
     public void clearNetCache(final String clear_domain,final String callback_function){
     	Log.d("browser", "clearNetCache " + clear_domain+","+callback_function);
 
@@ -608,6 +697,20 @@ public class PPkActivity extends Activity
     	
 		dialog.show();
     }
+    
+    @JavascriptInterface
+    public void deleteNetCache(final String uri){
+    	Log.d("browser", "deleteNetCache " + uri);
+        NetCache.deleteNetCache(uri);
+    }
+
+    @JavascriptInterface
+    public void updateNewVersion(){
+    	Log.d("browser", "updateNewVersion");
+
+    	checkUpdate();
+    }
+
     
     
     @JavascriptInterface
@@ -1304,7 +1407,7 @@ public class PPkActivity extends Activity
     	final AlertDialog dialog;
     	DefaultCancelButtonClickListener cancelButtonClickListener=new DefaultCancelButtonClickListener(callback_function);
     	
-    	final String ppk_uri=ODIN.formatPPkURI(in_uri);
+    	final String ppk_uri=ODIN.formatPPkURI(in_uri,true);
     	
     	JSONObject obj_key = ResourceKey.getKey(ppk_uri,false);
 		if(obj_key==null) {
@@ -1517,7 +1620,7 @@ public class PPkActivity extends Activity
     public void getPPkResource(final String input_uri,final String resp_type,final String callback_function){
     	Log.d("browser", "getPPkResource " + input_uri+","+callback_function);
     	
-    	final String format_ppk_uri=ODIN.formatPPkURI(input_uri);
+    	final String format_ppk_uri=ODIN.formatPPkURI(input_uri,true);
     	if( format_ppk_uri ==null ){
     		PeerWebAsyncTask.callbackBeforeExceute(
     				this.webshow,
@@ -1552,8 +1655,10 @@ public class PPkActivity extends Activity
     	
     	destURI=destURI.trim();
     	
-    	//处理完善destURI，自动补上缺少的 ppk:或http:前缀
-    	if(!destURI.contains(":")) {
+    	//处理完善destURI，自动转换或补上缺少的 ppk:或http:前缀
+    	if(destURI.startsWith(Config.PAYTOPPK_URI_PREFIX)) {
+    		destURI=PayToActivity.getPPkPayToolURI(destURI); 
+    	}else if(!destURI.contains(":")) {
     		if(destURI.contains(".") && !Util.isNumeric(destURI) )
     			destURI = "http://"+destURI;
     	    else
@@ -1566,11 +1671,26 @@ public class PPkActivity extends Activity
         Log.d("browser", "Go to " + destURI);
         
         if (destURI != null){
-        	final String format_ppk_uri=ODIN.formatPPkURI(destURI);
+        	final String format_ppk_uri=ODIN.formatPPkURI(destURI,false);
         	if( format_ppk_uri !=null ){
-                new ShowPPkUriAsyncTask().execute(format_ppk_uri);
+        		String go_uri_as_id = ODIN.formatPPkURI(destURI,true);
+        		
+        		if(!format_ppk_uri.equals(go_uri_as_id) ){
+                    //对于没有填写完整的地址，提示可选择访问的内容
+        			String str_info = "<center><h3>请选择要访问的内容</h3><li><a href='"+go_uri_as_id+"'>查看该奥丁号的设置属性 "+go_uri_as_id+"</a></li><br><li><a href='"+format_ppk_uri+"'>查看该奥丁号指向的网站主页 "+format_ppk_uri+"</a></li><font size='-2'>注：该奥丁号需先关联设置有效的主页内容才能被访问到。</font></center>";
+                    webshow.getSettings().setJavaScriptEnabled(false); 
+                    webshow.loadDataWithBaseURL(null, str_info, "text/html", "utf-8", null);
+                    
+                }else{
+                	new ShowPPkUriAsyncTask().execute(format_ppk_uri);
+                }
             }else if(destURI.equalsIgnoreCase(Config.ppkSettingPage )) { 
         		destURI=Config.ppkSettingPageFileURI;
+        		webshow.getSettings().setJavaScriptEnabled(true);
+        		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+        		webshow.loadUrl(destURI);
+            }else if(destURI.equalsIgnoreCase(Config.ppkPayPage )) { 
+        		destURI=Config.ppkPayPageFileURI;
         		webshow.getSettings().setJavaScriptEnabled(true);
         		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
         		webshow.loadUrl(destURI);
@@ -1583,7 +1703,9 @@ public class PPkActivity extends Activity
             		
             		webshow.loadUrl(destURI);
             	}else if(destURI.toLowerCase().startsWith( "file:" )) {
-	            	if(destURI.equalsIgnoreCase( Config.ppkSettingPageFileURI )) { //安全起见，对特定的file:起始网址才允许JS
+	            	if(destURI.equalsIgnoreCase( Config.ppkSettingPageFileURI ) 
+	            	  || destURI.equalsIgnoreCase( Config.ppkPayPageFileURI )		
+	            	  ) { //安全起见，对特定的file:起始网址才允许JS
 	            		webshow.getSettings().setJavaScriptEnabled(true);
 	            		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
 	            	}else {
@@ -1717,7 +1839,7 @@ public class PPkActivity extends Activity
         weburl.setTextColor(Color.BLACK);
         textStatus.setText("Opening "+url);
         if (url != null) { 
-        	final String format_ppk_uri=ODIN.formatPPkURI(url);
+        	final String format_ppk_uri=ODIN.formatPPkURI(url,false);
         	if( format_ppk_uri !=null ){
 	            PPkActivity.this.bLoadingHttpPage=false;
 	            
@@ -1726,8 +1848,13 @@ public class PPkActivity extends Activity
 	            new ShowPPkUriAsyncTask().execute(url);
 	            
 	            return true;
+        	//}else if(url.toLowerCase().startsWith( Config.PAYTOPPK_URI_PREFIX )) {
+        	//	new ShowPPkUriAsyncTask().execute( PayToActivity.getPPkPayToolURI(url) );
+        	//	return true;
         	}else if(url.toLowerCase().startsWith( "file:" )) {
-            	if(!url.equalsIgnoreCase( Config.ppkSettingPageFileURI )) { //安全起见，对不是特定的file:起始网址将中断访问，只显示空白页面
+            	if(!url.equalsIgnoreCase( Config.ppkSettingPageFileURI )
+            	  && !url.equalsIgnoreCase( Config.ppkPayPageFileURI )		
+            	  ) { //安全起见，对不是特定的file:起始网址将中断访问，只显示空白页面
             		PPkActivity.this.bLoadingHttpPage=false;
     	            
     	            view.stopLoading();
@@ -1735,6 +1862,22 @@ public class PPkActivity extends Activity
     	            new ShowPPkUriAsyncTask().execute("about:blank");
             		return true;
             	}
+            }else if (!url.startsWith("http") && !url.startsWith("about:")){
+            	Log.d("browser","shouldOverrideUrlLoading 。。user define scheme ");
+                try {
+                   // 以下固定写法
+                   final Intent intent = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse(url));
+                   intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                            | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                   startActivity(intent);
+                } catch (Exception e) {
+                   // 防止没有安装的情况
+                   e.printStackTrace();
+                   Toast.makeText(view.getContext(), "您所要打开的第三方App未安装！",Toast.LENGTH_SHORT)
+                   .show();
+                }
+                return true;            	
             }
         }
          
@@ -1753,7 +1896,7 @@ public class PPkActivity extends Activity
       @Override
       public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
         Log.d("browser","loadRes: " + url);
-        final String format_ppk_uri=ODIN.formatPPkURI(url);
+        final String format_ppk_uri=ODIN.formatPPkURI(url,false);
     	if( format_ppk_uri !=null ){
             return getPPkContent(url);
         }else{
@@ -1771,6 +1914,10 @@ public class PPkActivity extends Activity
         String show_url=view.getUrl();
         if(show_url.equalsIgnoreCase( Config.ppkSettingPageFileURI ) ) {
         	show_url=Config.ppkSettingPage;
+        	weburl.setText(show_url);
+            weburl.setTextColor(Color.BLACK);
+    	}else if(show_url.equalsIgnoreCase( Config.ppkPayPageFileURI ) ) {
+        	show_url=Config.ppkPayPage;
         	weburl.setText(show_url);
             weburl.setTextColor(Color.BLACK);
     	}

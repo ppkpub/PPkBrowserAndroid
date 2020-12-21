@@ -178,7 +178,7 @@ public class UpdateActivity extends Activity {
 		mDownloadTool = new DownloadTool(UpdateActivity.this);
 		mDownloadTool.downloadPrivateCache(url, mNewestApkFileName,handlerDownloadPrivateCache,progressDialog);
 		
-		Toast.makeText(UpdateActivity.this, "UpdateActivity downFile() mDownloadId="+mDownloadId, Toast.LENGTH_SHORT).show();
+		//Toast.makeText(UpdateActivity.this, "UpdateActivity downFile() mDownloadId="+mDownloadId, Toast.LENGTH_SHORT).show();
 		  
 	}
 	

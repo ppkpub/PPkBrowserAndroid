@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.ppkpub.ppkbrowser"
     android:versionCode="1"
-    android:versionName="0.5.2" >
+    android:versionName="0.6.0" >
 
     <uses-sdk
         android:minSdkVersion="19"
@@ -31,9 +31,16 @@
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            
+            <!--需要添加下面的intent-filter配置,支持第三方App或者浏览器跳转自己App-->
+	        <intent-filter>
+	            <action android:name="android.intent.action.VIEW"/>
+	            <category android:name="android.intent.category.DEFAULT"/>
+	            <category android:name="android.intent.category.BROWSABLE"/>
+	            <data android:scheme="ppk"/>
+	        </intent-filter>
         </activity>
         
         <activity
@@ -48,6 +55,18 @@
             android:screenOrientation="portrait" >
         </activity>
         
+        <activity
+            android:name="org.ppkpub.ppkbrowser.PayToActivity"
+            android:label="@string/lbl_payto" >
+            <!--需要添加下面的intent-filter配置,支持第三方App或者浏览器跳转自己App-->
+	        <intent-filter>
+	            <action android:name="android.intent.action.VIEW"/>
+	            <category android:name="android.intent.category.DEFAULT"/>
+	            <category android:name="android.intent.category.BROWSABLE"/>
+	            <data android:scheme="paytoppk" />
+	        </intent-filter>
+        </activity>
+        
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="org.ppkpub.ppkbrowser.fileprovider"
@@ -58,5 +77,7 @@
                 android:resource="@xml/file_paths"/>
         </provider>
     </application>
+    
+    
 
 </manifest>

@@ -14,7 +14,7 @@ public class Config {
   public static String appName = "PPk浏览器内测版";
   //public static String defaultLang = "EN";
   
-  public static String PPK_API_URL  = "http://tool.ppkpub.org/ppkapi2/";  //解析根标识的服务API
+  public static String PPK_API_URL  = "http://47.114.169.156/ppkapi2/";  //解析根标识的服务API
   public static String PPK_API_PUBKEY_PEM = "-----BEGIN PUBLIC KEY-----\r\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn+a+pl1qjw34cuoj+vDDioG5rsTXLK+h\r\nDLQY1nqXkrGt+50lz3T92IiPM1DWzrRz7ycrPkaesHsdCoB4zPRQy0OJHIQzGfpXdrqZbchJZfTM\r\nIFYDoPoPnlNH8xb4hQ8LoERtYxxwddGiHfvYhTEYFQBh4cj+AxEsex/duWim9O5q1I9PHK6anwlS\r\nNqmhyzxLAnFUKSqr2crUy7ZfCTi9zN63JXOsJtWi/dSZuK1RISej6zqQgkiQceIoqFXBjRVpYJQe\r\niQ3mw3uoZqth80e8UqT1ZXqyD82Obsb3ofKRFqbmEhuLi6+GJakgZsYs/BM/SpfIF0Wny5PWTemZ\r\nCWajXwIDAQAB\r\n-----END PUBLIC KEY-----\r\n"; //对标识解析结果的验证公钥
   /*
   public static String ROOT_ODIN_PARSE_API_URL  = "http://test.ppkpub.org:8088/"; //备用的根标识解析服务API
@@ -23,10 +23,17 @@ public class Config {
   public static String PPK_URI_PREFIX = "ppk:";
   public static String DIDPPK_URI_PREFIX = "did:"+PPK_URI_PREFIX;
   public static String PPK_URI_RESOURCE_MARK="*";
+  public static String PAYTOPPK_URI_PREFIX = "paytoppk:";
+  
+  public static String ppkPayToolURI  = "https://ppk001.sinaapp.com/demo/pay/";
+
+  public static String ppkSettingPage        = "about:settings";
+  public static String ppkSettingPageFileURI = "file:///android_asset/settings.html";
+  public static String ppkPayPage        = "about:pay";
+  public static String ppkPayPageFileURI = "file:///android_asset/paycode.html";
+  
   public static String ppkHotURI  = "ppk:joy/";
-  public static String ppkDefaultHomepage  = "ppk:0/";
-  public static String ppkSettingPage      = "about:settings";
-  public static String ppkSettingPageFileURI="file:///android_asset/settings.html";
+  public static String ppkDefaultHomepage  = ppkPayPage;
   
   public static int debugKey     = 0;  //非0值打开DEBUG调试信息
   
@@ -40,7 +47,7 @@ public class Config {
   public static String versionUpdateURL = "http://ppkpub.org/PPkBrowserAndroid/bin/version.json";
   
   public static String developeVersion  = "" ; //空字符串时表示为正式版本，开发版本取值注意加上:字符，如:01
-  public static String developeVersionUpdateURL   = "http://tool.ppkpub.org/autoupdate/ppkbrowser/version_test.json";
+  public static String developeVersionUpdateURL   = "http://47.114.169.156/autoupdate/ppkbrowser/version_test.json";
   //public static String developeVersionUpdateURL   = "http://192.168.62.99/autoupdate/ppkbrowser/version_local.json";
 
   public static String version = stableVersion + developeVersion;
@@ -110,6 +117,7 @@ public class Config {
   public static final String ODIN_BASE_SET_ADMIN="admin";
   public static final String ODIN_BASE_SET_AUTH="auth";
   public static final String ODIN_BASE_SET_PNS_URL="pns_url";
+  public static final String ODIN_BASE_SET_PNS_PARSER="pns_parser";
   
   public static final String ODIN_SET_VD_TYPE="type";
   public static final String ODIN_SET_VD_PUBKEY="pubkey";
@@ -203,12 +211,10 @@ public class Config {
   
   private static PPkActivity mMainActivity=null;
   private static String mDefaultConfigFileName = "default_config";
-  
-  
+
   
   public static void init(PPkActivity main_activity) {
 	mMainActivity=main_activity;
-    String strTemp;
     
     try {
         PackageManager packageManager = main_activity.getPackageManager();
@@ -253,7 +259,7 @@ public class Config {
       strTemp = obj_config.optString("ClearNetCacheWhenStart") ;
       if(strTemp!=null && strTemp.length()>0 )
     	  NetCache.mClearNetCacheWhenStart = Integer.parseInt( strTemp )!=0;
-      
+      /*
       String str_notif="StandardFeeSatoshi: "+ppkStandardDataFee;
       if(NetCache.mClearNetCacheWhenStart) {
     	  str_notif += "\n ClearNetCacheWhenStart: true";
@@ -263,7 +269,7 @@ public class Config {
       }
       
       Toast.makeText( mMainActivity.getWindow().getContext(),str_notif, Toast.LENGTH_SHORT).show();
-      
+      */
     } catch (Exception e) {
       //System.out.println("Config.loadUserDefined() error:"+ e.toString() );
       Toast.makeText( mMainActivity.getWindow().getContext(),"Config.loadUserDefined() error:"+ e.toString(), Toast.LENGTH_SHORT).show();
@@ -302,7 +308,7 @@ public class Config {
       JSONObject obj_config= ( strTemp!=null && strTemp.length()>0 ) ? new JSONObject(strTemp): new JSONObject() ;
 
       obj_config.put(set_name ,set_value) ;
-      Toast.makeText( mMainActivity.getWindow().getContext(),"Save "+set_name+":"+set_value, Toast.LENGTH_SHORT).show();
+      //Toast.makeText( mMainActivity.getWindow().getContext(),"Save "+set_name+":"+set_value, Toast.LENGTH_SHORT).show();
       
       if(mMainActivity.putPrivateData(mDefaultConfigFileName,obj_config.toString())) {
           reloadUserDefinedSet();

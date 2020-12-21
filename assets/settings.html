@@ -43,7 +43,11 @@
   <div class="form-group">
     <label for="odin_tool_url" class="col-sm-2 control-label">注册管理奥丁号服务网址</label>
     <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="odin_tool_url" value="http://tool.ppkpub.org:9876/odin" > <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='openOdinTool();'>打开</button><!-- <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="http://192.168.62.99:12345/odin";'>本地测试</button> <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="ppk:40086/";'>PTTP网站测试</button>  -->
+      <select class="form-control" id="odin_tool_url" >
+      <option value="http://47.114.169.156:9876/" selected>杭州: http://47.114.169.156:9876/</option>
+      <option value="http://tool.ppkpub.org:9876/">新加坡: http://tool.ppkpub.org:9876/</option>
+      </select>
+      <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='openOdinTool();'>打开</button><!-- <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="http://192.168.62.99:12345/";'>本地测试</button> <button type="text" class="btn btn-success" onclick='document.getElementById("odin_tool_url").value="ppk:40086/";'>PTTP网站测试</button>  -->
     </div>
   </div>
 </div>
@@ -54,7 +58,7 @@
     <label for="default_odin" class="col-sm-2 control-label">当前使用的身份标识</label>
     <div class="col-sm-10" align="right">
       <input type="text" class="form-control" placeholder="" id="default_odin" value="" onfocus="this.select()" onmouseover="this.select()" readonly>
-      <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='viewDefaultID();'>查看开放信息</button> <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='openOdinTool();'>从我注册的奥丁号中选取</button>
+      <button type="text" class="btn btn-success" onclick='viewDefaultID();'>查看开放信息</button> <button type="text"  class="btn btn-success" onclick='openOdinTool();'>从我注册的奥丁号中选取</button> <button type="text" class="btn btn-success" onclick='genPayCode();'>生成我的收款码</button>
     </div>
   </div>
 
@@ -70,7 +74,7 @@
     <label for="odin_local_pubkey" class="col-sm-2 control-label">本机保存的身份密钥</label>
     <div class="col-sm-10" align="right">
       <textarea class="form-control" placeholder="" id="odin_local_pubkey" value="" rows=3 onfocus="this.select()" onmouseover="this.select()"></textarea>
-      <button type="text" id="btn_open_odin_tool"  class="btn btn-success" onclick='setKeyOfDefaultID();'>查看/配置密钥</button> <button type="text" id="btn_update_online_pubkey"  class="btn btn-success" disabled="true" onclick='updateOnlinePubkey();'>更新公钥到网络上</button>
+      <button type="text"  class="btn btn-success" onclick='setKeyOfDefaultID();'>查看/配置密钥</button> <button type="text" id="btn_update_online_pubkey"  class="btn btn-success" disabled="true" onclick='updateOnlinePubkey();'>更新公钥到网络上</button>
     </div>
   </div>
 </div>
@@ -100,6 +104,13 @@
 <h3>高级设置</h3>
 <div class="row section">
   <div class="form-group">
+    <label for="odin_tool_url" class="col-sm-2 control-label">主页网址</label>
+    <div class="col-sm-10" align="right">
+      <input type="text" class="form-control" placeholder="" id="homepage_uri" value="ppk:0/" readonly > <button type="text"  class="btn btn-success" onclick='setPPkPayAsHomePage();'>将奥丁号收款码设为主页</button> <button type="text"  class="btn btn-success" onclick='setHomePage();'>自定义主页</button>
+    </div>
+  </div>
+  
+  <div class="form-group">
     <label for="standard_fee_satoshi" class="col-sm-2 control-label">本机注册/转账花费的比特币矿工费用</label>
     <div class="col-sm-10" align="right">
       <span class="help-block" id="standard_fee_satoshi" align="left"><span id="btc_standard_fee_satoshi">...</span>聪（注:1聪 等于 0.00000001 BTC）</span>
@@ -113,13 +124,6 @@
       <button type="text" id="btn_clear_net_cache"  class="btn btn-danger" onclick='clearNetCache();'>清除缓存</button>
     </div>
   </div>
-  
-  <div class="form-group">
-    <label for="odin_tool_url" class="col-sm-2 control-label">主页网址</label>
-    <div class="col-sm-10" align="right">
-      <input type="text" class="form-control" placeholder="" id="homepage_uri" value="ppk:0/" readonly > <button type="text" id="btn_set_homepage"  class="btn btn-success" onclick='setHomePage();'>修改主页</button>
-    </div>
-  </div>
 
   <div class="form-group">
     <label for="btn_backup_private_data" class="col-sm-2 control-label">备份或恢复应用数据(包括比特币私钥、身份验证密钥等)</label>
@@ -127,6 +131,10 @@
       <button type="text" id="btn_backup_private_data"  class="btn btn-danger" onclick='backupPrivateData();'>备份/恢复</button>
     </div>
   </div>
+  
+  <center>
+      <button type="text" id="btn_updateNewVersion"  class="btn btn-warning" style="width: 75%;" onclick='updateNewVersion();'>检查最新版本</button>
+  </center>
 </div>
 
 
@@ -179,7 +187,7 @@ function init(){
         
         //读取PPk浏览器内置钱包中缺省比特币地址
         PeerWeb.getDefaultAddress(
-            'BITCOIN',  
+            'ppk:btc/',  
             'callback_setBtcNewAddress'  //回调方法名称
         );
         
@@ -223,6 +231,10 @@ function callback_backupPrivateData(status,obj_data){
     }
 }
 
+function updateNewVersion(){
+    PeerWeb.updateNewVersion( );
+}
+
 function setBtcStandardFeeSatoshi(){
     PeerWeb.setDefaultSetting(
             'StandardFeeSatoshi',
@@ -247,6 +259,12 @@ function callback_getStandardFeeSatoshi(status,obj_data){
 function setHomePage(){
     PeerWeb.setDefaultSetting(
             'Homepage',
+            'callback_getHomepage'  //回调方法名称
+        );
+}
+
+function setPPkPayAsHomePage(){
+    PeerWeb.setPPkPayAsHomePage(
             'callback_getHomepage'  //回调方法名称
         );
 }
@@ -277,7 +295,7 @@ function callback_clearNetCache(status,obj_data){
 function changeBtcAnotherAddress(){
     //切换使用PPk浏览器内置钱包中的其它比特币地址
     PeerWeb.changeAnotherAddress(
-        'BITCOIN',  
+        'ppk:btc/',  
         'callback_setBtcNewAddress'  //回调方法名称
     );
 }
@@ -309,7 +327,7 @@ function refreshBtcAddressSummary(){
     
     //读取指定比特币地址的概要汇总信息
     PeerWeb.getAddressSummary(
-        'BITCOIN',  
+        'ppk:btc/',  
         mCurrentAddress,
         'callback_getBtcAddressSummary'  //回调方法名称
     );
@@ -352,7 +370,7 @@ function openBtcDetail(){
 
 function generateNewAddress(){
     PeerWeb.generateNewAddress(
-            'BITCOIN',
+            'ppk:btc/',
             'callback_setBtcNewAddress'
         );
 }
@@ -363,7 +381,7 @@ function importPrivateKey(){
         private_key=private_key.trim();
         if( private_key.substr(0,1)=='5' || private_key.substr(0,1)=='L' || private_key.substr(0,1)=='K' ){
             PeerWeb.importPrivateKey(
-                'BITCOIN',
+                'ppk:btc/',
                 private_key,
                 'callback_setBtcNewAddress'
               );
@@ -380,13 +398,13 @@ function sendBTC(){
         return;
     }
     
-    var dest_address = prompt("请输入收款的比特币公开地址（以1起始的字符串）","");
+    var dest_address = prompt("请输入收款的奥丁号（以ppk:起始）或比特币公开地址（以1,3起始的字符串）","");
     if (dest_address != null){
-        if( dest_address.substr(0,1)=='1' ){
+        if( dest_address.substr(0,1)=='1' || dest_address.substr(0,1)=='3' || dest_address.substr(0,4)=='ppk:' ){
             var send_amount = prompt("请输入要发送给\n"+dest_address+"\n的BTC数额：","0.0");
             if (send_amount != null){
                 if(!isNaN(send_amount)){
-                    var send_amount_satoshi= Math.floor( send_amount * BTC_SATOSHI_UNIT );
+                    var send_amount_satoshi= Math.round( parseFloat(send_amount) * BTC_SATOSHI_UNIT );
                     var tx_argus_json='{"source":"'+mCurrentAddress             //交易发送者地址
                                      +'","destination":"'+dest_address                 //交易接收者地址
                                      +'","amount_satoshi":'+send_amount_satoshi //转账金额,单位satoshi
@@ -396,7 +414,7 @@ function sendBTC(){
                     document.getElementById("btn_send_btc").innerHTML="正在处理，请稍候...";
     
                     PeerWeb.getSignedTX(
-                        'BITCOIN',
+                        'ppk:btc/',
                         stringToHex(tx_argus_json),  //待生成交易的参数数据
                         'callback_getSignedTX'
                       );
@@ -405,7 +423,7 @@ function sendBTC(){
                 }
              }
         }else{
-            alert("请在地址文本框里输入对方收款的比特币公开地址（以1起始的字符串）！");
+            alert("请在地址文本框里输入对方收款的奥丁号（以ppk:起始）或比特币公开地址（以1,3起始）！");
         }
     }
 }
@@ -415,7 +433,7 @@ function callback_getSignedTX(status,obj_data){
     if('OK'==status){
         //调用PeerWeb接口发送已签名的比特币交易
         PeerWeb.sendSignedTX(
-                "BITCOIN",
+                "ppk:btc/",
                 mCurrentAddress,  //交易发送者地址
                 obj_data.signed_tx_hex,  //已签名的比特币交易数据，HEX格式
                 'callback_sendBtcTX' //回调方法 
@@ -518,7 +536,7 @@ function openOdinTool(){
         return;
     }
     
-    window.location.href=odin_tool_url+"?address="+mCurrentAddress;
+    window.location.href=odin_tool_url+"odin?address="+mCurrentAddress;
 }
 
 function updateOnlinePubkey(){
@@ -542,7 +560,7 @@ function updateOnlinePubkey(){
     
     var tmp_odin= default_odin_uri.substr(4,default_odin_uri.length-4-1);
     
-    window.location.href=odin_tool_url+"-update-vd?odin="+tmp_odin+"&address="+mCurrentAddress;
+    window.location.href=odin_tool_url+"odin-update-vd?odin="+tmp_odin+"&address="+mCurrentAddress;
 }
 
 function viewDefaultID(){
@@ -559,6 +577,17 @@ function viewDefaultID(){
         'content',
         'callback_getDefaultUserOdinInfo'  //回调方法名称
     );
+}
+
+function genPayCode(){
+    var default_odin_uri=document.getElementById("default_odin").value;
+    
+    if( default_odin_uri.length ==0 ){
+        alert('请先通过标识管理工具选取一个奥丁号作为你的收款地址！');
+        return;
+    }
+    
+    window.location = "paycode.html";
 }
 
 function callback_getDefaultUserOdinInfo(status,obj_data){
@@ -589,7 +618,7 @@ function setKeyOfDefaultID(){
         'callback_setPPkResourceKey'  //回调方法名称
     );
     
-    //window.location.href=odin_tool_url+"?address="+mCurrentAddress;
+    //window.location.href=odin_tool_url+"odin?address="+mCurrentAddress;
 }
 function callback_setPPkResourceKey(status,obj_data){
     if('OK'==status){
@@ -722,7 +751,7 @@ function callback_newOdinFastSignTX(status,obj_data){
     if('OK'==status){
         //调用PeerWeb接口发送已签名的比特币交易
         PeerWeb.sendSignedTX(
-                "BITCOIN",
+                "ppk:btc/",
                 mCurrentAddress,  //交易发送者地址
                 obj_data.signed_tx_hex,  //已签名的比特币交易数据，HEX格式
                 'callback_newOdinFastSendTX' //回调方法 
@@ -866,14 +895,20 @@ function sendExtAsset(){
         alert('该资产地址尚未设置，请先创建或导入一个该资产对应的币种地址！');
         return;
     }
-    
-    var dest_address = prompt("请输入收款的比特现金公开地址（以1起始的字符串）","");
+ 
+    var dest_address = prompt("请输入收款的奥丁号（以ppk:起始）或比特现金公开地址（以1,3,q或p起始）","");
     if (dest_address != null){
-        if( dest_address.substr(0,1)=='1' ){
+        dest_address=dest_address.replace("：",":").replace("PPK:","ppk:"); //替换容易输错的字符
+        if( dest_address.substr(0,1)=='1' 
+         || dest_address.substr(0,1)=='3' 
+         || dest_address.substr(0,1)=='q' 
+         || dest_address.substr(0,1)=='p' 
+         || dest_address.substr(0,12)=='bitcoincash:' 
+         || dest_address.substr(0,4)=='ppk:' ){
             var send_amount = prompt("请输入要发送给\n"+dest_address+"\n的比特现金（BCH)数额：","0.0");
             if (send_amount != null){
                 if(!isNaN(send_amount)){
-                    var send_amount_satoshi= Math.floor( send_amount * BTC_SATOSHI_UNIT );
+                    var send_amount_satoshi= Math.round( parseFloat(send_amount) * BTC_SATOSHI_UNIT );
                     var tx_argus_json='{"source":"'+ext_asset_address             //交易发送者地址
                                      +'","destination":"'+dest_address                 //交易接收者地址
                                      +'","amount_satoshi":'+send_amount_satoshi //转账金额,单位satoshi
@@ -892,7 +927,7 @@ function sendExtAsset(){
                 }
              }
         }else{
-            alert("请在地址文本框里输入对方收款的比特现金公开地址（以1起始的字符串）！");
+            alert("请在地址文本框里输入对方收款的奥丁号（以ppk:起始）或比特现金公开地址（以以1,3,q或p起始起始）！");
         }
     }
 }

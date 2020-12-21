@@ -1,10 +1,14 @@
 package org.ppkpub.ppkbrowser;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 import android.util.Log;
 import android.widget.Toast;
@@ -82,7 +86,7 @@ public class NetCache {
     return  mNetCacheDirPrefix + format_safe_filename;
   }
   
-  
+  /*
   public static boolean exportTextToFile(String text, String fileName) {
     try {
       String file_path = fileName.substring(0,fileName.lastIndexOf('/'));
@@ -101,9 +105,33 @@ public class NetCache {
       return false;
     }
   }
+  */
+  
+  public static boolean exportTextToFile(String text, String fileName) {
+    try {
+      String file_path = fileName.substring(0,fileName.lastIndexOf('/'));
+      File fp = new File(file_path);    
+      // 创建目录    
+      if (!fp.exists()) {    
+          fp.mkdirs();// 目录不存在的情况下，创建目录。    
+      } 
+      File file1 = new File(fileName);
+	  Writer writer = new BufferedWriter(
+			new OutputStreamWriter(
+					new FileOutputStream(file1), Config.PPK_TEXT_CHARSET));
+	  writer.write(text);
+	  writer.flush();
+	  writer.close();
+
+      return true;
+    } catch (Exception e) {
+      System.out.println(e.toString());
+      return false;
+    }
+  }
   
   public static String readTextFile(String fileName){  
-    return readTextFile(fileName,Config.BINARY_DATA_CHARSET);
+    return readTextFile(fileName,Config.PPK_TEXT_CHARSET);
   } 
     
   public static String readTextFile(String fileName,String encode){  

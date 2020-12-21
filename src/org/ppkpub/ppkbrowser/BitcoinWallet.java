@@ -223,7 +223,34 @@ public class BitcoinWallet  {
     }
 
     int max_odin_data_length=(max_multisig_n-2)*ppk_pubkey_embed_data_max_length+(max_multisig_n-1)*ppk_pubkey_embed_data_max_length*(max_tx_num-1)+max_op_return_length;  //支持嵌入的ODIN数据最大字节数;
-    
+    /*
+    try{
+        if(destination.length()>0){
+            //检查地址格式，如果是奥丁号则相应解析提取对应的BTC地址
+            if(destination.length()<30){
+                destination = ODIN.formatPPkURI(destination,true);
+                if(destination!=null){
+                    String ap_resp_content = Util.fetchUriContent(destination);
+                    System.out.println("************* BitcoinWallet.transaction() ap_resp_content=");
+                    System.out.println(ap_resp_content);
+                    JSONObject tmp_dest_info = new JSONObject(ap_resp_content);
+                    JSONObject x_wallet_list = tmp_dest_info.optJSONObject("x_wallets");
+                    if(x_wallet_list!=null){
+                        JSONObject tmp_address_set = x_wallet_list.optJSONObject("ppk:btc/");
+                        if(tmp_address_set!=null)
+                            destination = tmp_address_set.optString("address","");
+                        
+                        System.out.println("destination="+destination);
+                    }
+                }
+            }
+            
+            Address.getParametersFromAddress(destination);
+        }
+    } catch(Exception e){
+        destination="";
+    }
+    */
     
     if (!destination.equals("") && amount_satoshi.compareTo(BigInteger.valueOf(Config.dustSize))<0) {
       tx.verify();
@@ -574,7 +601,7 @@ public class BitcoinWallet  {
   //获得指定地址的概要数据
   public static JSONObject getAddressSummary(String address) {
     try {
-      String result = CommonHttpUtil.getInstance().getContentFromUrl( "http://tool.ppkpub.org/odin/summary.php?address=" +address);
+      String result = CommonHttpUtil.getInstance().getContentFromUrl( Config.PPK_API_URL+"summary.php?address=" +address);
     	
       JSONObject tempResultObject=new JSONObject(result);
       if("OK".equalsIgnoreCase( tempResultObject.getString("status") ))
@@ -588,7 +615,7 @@ public class BitcoinWallet  {
 //获得指定BCH地址的概要数据
   public static JSONObject getBchAddressSummary(String address) {
     try {
-      String result = CommonHttpUtil.getInstance().getContentFromUrl( "http://tool.ppkpub.org/odin/summary_bch.php?address=" +address);
+      String result = CommonHttpUtil.getInstance().getContentFromUrl( Config.PPK_API_URL+"summary_bch.php?address=" +address);
     	
       JSONObject tempResultObject=new JSONObject(result);
       if("OK".equalsIgnoreCase( tempResultObject.getString("status") ))

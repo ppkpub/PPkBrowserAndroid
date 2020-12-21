@@ -1,11 +1,8 @@
 package org.ppkpub.ppkbrowser;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.wallet.Wallet;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,9 +20,9 @@ public class ODIN {
   
   //格式化输入URI参数，使之符合ODIN标识定义规范，无效返回null
   //参数prior_add_resource_mark取值true时 优先追加资源标识符（主要用于ID使用时）， 否则根据常用网址规则自动判断添加缺少的"/"字符和资源标志
-  public static String formatPPkURI(String ppk_uri){
-  	  return formatPPkURI(ppk_uri,false);
-  }
+  //public static String formatPPkURI(String ppk_uri){
+  //	  return formatPPkURI(ppk_uri,false);
+  //}
   public static String formatPPkURI(String ppk_uri,boolean prior_add_resource_mark_for_id){
     if(ppk_uri==null)
         return null;
@@ -34,6 +31,9 @@ public class ODIN {
         //存在连续的/字符
         return null;
     }
+    
+    //替换可能的中文易输错字符
+    ppk_uri=ppk_uri.replaceFirst("：", ":");
     
     int scheme_posn=ppk_uri.indexOf(":");
     String main_part=null;
@@ -94,7 +94,7 @@ public class ODIN {
   {
     try{
       //检查URI格式符合要求
-      String format_ppk_uri = formatPPkURI(in_uri);
+      String format_ppk_uri = formatPPkURI(in_uri,true);
       
       if( format_ppk_uri==null ){
         Log.d("Odin","splitPPkURI() meet invalid ppk-uri:"+in_uri);
@@ -251,12 +251,12 @@ public class ODIN {
     return listEscaped;
   }
   
-  //对类似dir:ppk:起始网址转换得到实际的PPK资源网址，如果出错则返回null
+  //对类似did:ppk:起始网址转换得到实际的PPK资源网址，如果出错则返回null
   public static String  getRealPPkURI(String uri){
       if( uri.toLowerCase().startsWith(Config.DIDPPK_URI_PREFIX)) 
 	      	uri = Config.PPK_URI_PREFIX + uri.substring(Config.DIDPPK_URI_PREFIX.length());
 
-      return formatPPkURI( uri )  ;
+      return formatPPkURI( uri,true )  ;
   }
 
   public static JSONObject getRootOdinSet(String root_odin)  {
@@ -374,4 +374,5 @@ public class ODIN {
 	  
 	  return false;
   }
+
 }
