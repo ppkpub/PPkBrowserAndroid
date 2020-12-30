@@ -1,1 +1,1 @@
-{"version":"0.6.0","description":"1.主界面和设置里增加收款码功能入口;\n2.支持点击ppk:和paytoppk:链接打开PPk应用,访问PPk网络和支付BTC/BCH等;\n3.支持点击bitcoin:链接打开本机安装的比特币钱包app;\n4.JS接口增加删除指定资源缓存;\n5.修正缓存中文乱码问题 ","download_list":["http://47.114.169.156/download/PPkBrowser.apk","http://tool.ppkpub.org/download/PPkBrowser.apk"]}
+{"version":"0.6.1","description":"1.改进收款码功能入口;\n2.增加对H5缓存接口的支持 ","download_list":["http://47.114.169.156/download/PPkBrowser.apk","http://tool.ppkpub.org/download/PPkBrowser.apk"]}
