@@ -236,7 +236,7 @@ public class PPkActivity extends Activity
             @Override
             public void onClick(View view)
             {
-                textStatus.setText("Stop loading "+webshow.getUrl());
+            	setTextStatus("Stop loading ",webshow.getUrl());
                 webshow.stopLoading() ;
                 progressBar.setVisibility(View.GONE);
             }
@@ -249,7 +249,7 @@ public class PPkActivity extends Activity
             public void onClick(View view)
             {
             	String current_url =  webshow.getUrl();
-                textStatus.setText("Reloading "+ current_url);
+            	setTextStatus("Reloading ",current_url);
                 NetCache.deleteNetCache(current_url);
                 webshow.clearCache(true);
                 //webshow.reload() ;
@@ -456,7 +456,7 @@ public class PPkActivity extends Activity
     		@Override
     		public void run() {
     			String signed_tx_hex= objOdinTransctionData.genSignedTransctionHex();
-    			textStatus.setText("sendOdinTX: signed_tx_hex ok");
+    			setTextStatus("sendOdinTX: signed_tx_hex ok","");
     			Log.d("browser", "sendOdinTX signed_tx_hex=" + signed_tx_hex);
     			webshow.loadUrl("javascript:callback_confirmSendTX('" + signed_tx_hex + "')");
     		}
@@ -598,6 +598,8 @@ public class PPkActivity extends Activity
 			final EditText txtSetValue = (EditText)DialogView.findViewById(R.id.input_item_value ); 
 			txtSetName.setText( set_name );
 			txtSetValue.setText( set_value );
+			
+			txtSetValue.requestFocus();
 
 			dialog.show();
 			
@@ -1649,6 +1651,33 @@ public class PPkActivity extends Activity
     	return true;
     }
     
+    public void setTextStatus(String txt_head,String txt_addon) {
+    	//对txt_addon自动截短
+    	if(txt_addon!=null && txt_addon.length()>32) {
+    		txt_addon=txt_addon.substring(0,32)+"...";
+    	}
+    	textStatus.setText(txt_head+txt_addon);
+    }
+    
+    //激活完整的H5支持，包括JS、LocalStorage和PPK插件等
+    public void enableFullH5(WebView view) {
+      try {
+    	  //view.setBackgroundColor(0);
+    	  //view.getBackground().setAlpha(0); 
+    	  //view.getSettings().setUseWideViewPort(false);
+    	  view.getSettings().setJavaScriptEnabled(true);
+    	  view.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+    	  view.getSettings().setDomStorageEnabled(true);// 打开本地缓存提供JS调用,至关重要，开启DOM缓存，开启LocalStorage存储
+		//view.getSettings().setAppCacheMaxSize(1024 * 1024 * 8);// 实现8倍缓存
+    	  view.getSettings().setAllowFileAccess(false);
+    	  view.getSettings().setAppCacheEnabled(true);
+    	  view.getSettings().setAppCachePath(NetCache.getNetCachePath() );
+    	  view.getSettings().setDatabaseEnabled(true);
+      }catch(Exception e) {
+    	 Log.e("browser","enableFullH5() meet excetion: " + e);	
+      }
+    }
+    
     public void gotoURI(String destURI){
     	if(destURI==null)
     		return;
@@ -1667,7 +1696,7 @@ public class PPkActivity extends Activity
     	
         weburl.setText(destURI);
         weburl.setTextColor(Color.BLACK);
-        textStatus.setText("Go to "+destURI);
+        setTextStatus("Go to ",destURI);
         Log.d("browser", "Go to " + destURI);
         
         if (destURI != null){
@@ -1686,28 +1715,25 @@ public class PPkActivity extends Activity
                 }
             }else if(destURI.equalsIgnoreCase(Config.ppkSettingPage )) { 
         		destURI=Config.ppkSettingPageFileURI;
-        		webshow.getSettings().setJavaScriptEnabled(true);
-        		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+        		enableFullH5(webshow);
         		webshow.loadUrl(destURI);
             }else if(destURI.equalsIgnoreCase(Config.ppkPayPage )) { 
         		destURI=Config.ppkPayPageFileURI;
-        		webshow.getSettings().setJavaScriptEnabled(true);
-        		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+        		enableFullH5(webshow);
         		webshow.loadUrl(destURI);
             }else {
             	if(destURI.toLowerCase().startsWith( "http:" )
             			|| destURI.toLowerCase().startsWith( "https:" )) {
             		//普通网页允许执行JS
-            		webshow.getSettings().setJavaScriptEnabled(true);  
-            		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+            		enableFullH5(webshow);
             		
             		webshow.loadUrl(destURI);
             	}else if(destURI.toLowerCase().startsWith( "file:" )) {
-	            	if(destURI.equalsIgnoreCase( Config.ppkSettingPageFileURI ) 
-	            	  || destURI.equalsIgnoreCase( Config.ppkPayPageFileURI )		
+	            	if(destURI.startsWith( Config.ppkSettingPageFileURI ) 
+	            	  || destURI.startsWith( Config.ppkPayPageFileURI )		
+	            	  || destURI.startsWith( Config.ppkPaySharePageFileURI )		
 	            	  ) { //安全起见，对特定的file:起始网址才允许JS
-	            		webshow.getSettings().setJavaScriptEnabled(true);
-	            		webshow.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+	            		enableFullH5(webshow);
 	            	}else {
 	            		webshow.getSettings().setJavaScriptEnabled(false);
 	            	}
@@ -1734,7 +1760,7 @@ public class PPkActivity extends Activity
 	    String historyUrl = item.getUrl();
 	    
         webshow.goBack();
-        textStatus.setText("Back to "+historyUrl);
+        setTextStatus("Back to ",historyUrl);
         weburl.setText(historyUrl);
         weburl.setTextColor(Color.BLACK);
 
@@ -1751,7 +1777,7 @@ public class PPkActivity extends Activity
 	    String forwardUrl = item.getUrl();
 	    
         webshow.goForward();
-        textStatus.setText("Forward to "+forwardUrl);
+        setTextStatus("Forward to ",forwardUrl);
         weburl.setText(forwardUrl);
         weburl.setTextColor(Color.BLACK);
 
@@ -1837,7 +1863,7 @@ public class PPkActivity extends Activity
         Log.d("browser","shouldOverrideUrlLoading 。。 url: "+ url);
         weburl.setText(url);
         weburl.setTextColor(Color.BLACK);
-        textStatus.setText("Opening "+url);
+        setTextStatus("Opening ",url);
         if (url != null) { 
         	final String format_ppk_uri=ODIN.formatPPkURI(url,false);
         	if( format_ppk_uri !=null ){
@@ -1848,12 +1874,10 @@ public class PPkActivity extends Activity
 	            new ShowPPkUriAsyncTask().execute(url);
 	            
 	            return true;
-        	//}else if(url.toLowerCase().startsWith( Config.PAYTOPPK_URI_PREFIX )) {
-        	//	new ShowPPkUriAsyncTask().execute( PayToActivity.getPPkPayToolURI(url) );
-        	//	return true;
         	}else if(url.toLowerCase().startsWith( "file:" )) {
-            	if(!url.equalsIgnoreCase( Config.ppkSettingPageFileURI )
-            	  && !url.equalsIgnoreCase( Config.ppkPayPageFileURI )		
+            	if(!url.startsWith( Config.ppkSettingPageFileURI )
+            	  && !url.startsWith( Config.ppkPayPageFileURI )		
+            	  && !url.startsWith( Config.ppkPaySharePageFileURI )		
             	  ) { //安全起见，对不是特定的file:起始网址将中断访问，只显示空白页面
             		PPkActivity.this.bLoadingHttpPage=false;
     	            
@@ -1862,7 +1886,10 @@ public class PPkActivity extends Activity
     	            new ShowPPkUriAsyncTask().execute("about:blank");
             		return true;
             	}
-            }else if (!url.startsWith("http") && !url.startsWith("about:")){
+        	}else if(url.toLowerCase().startsWith( "about:" )) {
+        		gotoURI(url);
+  	            return true;
+            }else if (!url.startsWith("http") ){
             	Log.d("browser","shouldOverrideUrlLoading 。。user define scheme ");
                 try {
                    // 以下固定写法
@@ -1907,16 +1934,16 @@ public class PPkActivity extends Activity
 
       @Override
       public void onPageFinished(WebView view, String url) {
-        //textStatus.setText("Finished");
-        view.getSettings().setJavaScriptEnabled(true);
-        view.addJavascriptInterface(PPkActivity.this, Config.EXT_PEER_WEB);
+        //setTextStatus("Finished","");
+    	enableFullH5(view);
         
         String show_url=view.getUrl();
-        if(show_url.equalsIgnoreCase( Config.ppkSettingPageFileURI ) ) {
+        if(show_url.startsWith( Config.ppkSettingPageFileURI ) ) {
         	show_url=Config.ppkSettingPage;
         	weburl.setText(show_url);
             weburl.setTextColor(Color.BLACK);
-    	}else if(show_url.equalsIgnoreCase( Config.ppkPayPageFileURI ) ) {
+    	}else if(show_url.startsWith( Config.ppkPayPageFileURI )
+    			|| show_url.startsWith( Config.ppkPaySharePageFileURI ) ) {
         	show_url=Config.ppkPayPage;
         	weburl.setText(show_url);
             weburl.setTextColor(Color.BLACK);
@@ -1952,7 +1979,7 @@ public class PPkActivity extends Activity
         protected void onPreExecute() {
             super.onPreExecute();
             weburl.setTextColor(Color.BLACK);
-            textStatus.setText("PreExecute PPk resource ");
+            setTextStatus("PreExecute PPk resource ","");
             //String str_info="<h3>Loading PPk resource ...<br>正在读取PPk资源信息...</h3>";
             //webshow.loadDataWithBaseURL(null, str_info, "text/html", "utf-8", null);
             progressBar.setVisibility(View.VISIBLE);//显示进度条提示框
@@ -2039,7 +2066,7 @@ public class PPkActivity extends Activity
 	            }
             }
             
-            textStatus.setText("Loaded PTTP: "+result_uri + "\n"+str_more_info);
+            setTextStatus("Loaded PTTP: ",result_uri + "\n"+str_more_info);
             webshow.loadDataWithBaseURL(result_uri, result_content, mimeType, encoding, this.ppkURI);
 
             progressBar.setVisibility(View.GONE);

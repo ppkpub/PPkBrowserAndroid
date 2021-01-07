@@ -7,9 +7,9 @@
 <!-- 下面两句代码是做手机适配用的 ， 加上之后手机网页就会自动适配-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">   
 
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-<script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
 
 </head>
 <body>
@@ -246,11 +246,11 @@ function callback_getStandardFeeSatoshi(status,obj_data){
     if('OK'==status){
         //alert("obj_data.StandardFeeSatoshi="+obj_data.StandardFeeSatoshi);
         if(obj_data.StandardFeeSatoshi!=null){
-          if(Math.round(obj_data.StandardFeeSatoshi)>=500 && Math.round(obj_data.StandardFeeSatoshi)<=50000){
+          if(Math.round(obj_data.StandardFeeSatoshi)>=500 && Math.round(obj_data.StandardFeeSatoshi)<=20000){
             MIN_FEE_SATOSHI=Math.round(obj_data.StandardFeeSatoshi);
             document.getElementById("btc_standard_fee_satoshi").innerHTML=""+MIN_FEE_SATOSHI;
           }else{
-            alert("无效的矿工费用数值，请重新设置！\n默认为1000，可设范围为500-50000。\n给矿工的费用越高，交易会被更优先确认收录到区块链上。");
+            alert("无效的矿工费用数值，请重新设置！\n默认为1000，可设范围为500-20000。\n给矿工的费用越高，交易会被更优先确认收录到区块链上。");
           }
         }
     }

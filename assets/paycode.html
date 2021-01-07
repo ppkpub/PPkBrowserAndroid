@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>PPk小工具 - PPk MicroTool v3 for PPkBrowser</title>
+    <meta content="ppkpub.org" name="author" />
+    <meta content="PPk tool for MircoMsg include Scan&Login,ODIN register" name="description" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+
+    <link rel="stylesheet" href="css/weui.min.css">
+    <link rel="stylesheet" href="css/jquery-weui.min.css">
+    <link rel="stylesheet" href="css/ppktool.css">
+</head>
+<body ontouchstart >
+  <h1 class="demos-title">奥丁号收付款</h1>
+  <br>
+  <div id="history_odins_area" style="display:none;">
+    <div id="history_odins" align="center"></div>
+  </div>
+  
+  <input type="hidden" id="select_dest_odin" value="">
+    
+  <center>
+  <div id="qrcode_payto">
+    <center><img src="./image/title.png" style="width:auto;height:100px;border-radius:6px;"></center>
+  </div>
+
+  <div style="border: 0px solid; margin: 0 auto;" onclick="selectHistoryODIN();">
+    <img id="qrCodeIcoPayTo" style="vertical-align:middle;width:32px;height:32px;border-radius:6px;" src="https://tool.ppkpub.org/image/user.png" alt="" >
+    <span style="display: inline-block;vertical-align: middle;padding: 5px 0;font-size:12px;text-align: left;"><span id="dest_title" ></span><br><span id="payto_odin_uri" style="font-weight:bold;"></span><img src="image/edit.png" style="vertical-align:middle;" width="16" height="16"   alt="点击更换" ></span>
+  </div>
+
+  <h3>请使用数字钱包客户端扫码付款</h3>
+  <p class="weui-msg__desc">可用以太坊imToken、比原Bycoin、支付宝、微信等APP</p>
+  <p>
+  <button class="weui-btn weui-btn_mini  weui-btn_primary" style="width: 45%;" id="btn_shareQrCode" onclick="shareQrCode( );">分享收款码</button> 
+  <button class="weui-btn weui-btn_mini ppk-bg" style="width: 45%;"  id="btn_testQrCode" onclick="testQrCode( );">向奥丁号付款</button>
+  <br>
+  <a href="javascript:gotoSetting( );" class="weui-btn weui-btn_mini weui-btn_plain-default" style="width: 32%;" target="_top">注册奥丁号</a> 
+  <a href="javascript:gotoURL('https://tool.ppkpub.org/swap/','正在打开奥丁号拍卖交换工具' );" class="weui-btn weui-btn_mini weui-btn_plain-default" style="width: 30%;"  target="_top">拍卖交换</a> 
+  <a href="javascript:fastLoginPNS();" class="weui-btn weui-btn_mini weui-btn_plain-default" style="width: 32%;" target="_top">关联多钱包</a>
+  <br>
+  <a href="javascript:gotoURL('http://47.114.169.156:9876/','正在打开奥丁号查询工具' );" class="weui-btn weui-btn_mini weui-btn_plain-default" style="width: 32%;" target="_top">查询奥丁号</a> 
+  <a href="https://ppk001.sinaapp.com/docs/help_ppkbrowser/" class="weui-btn weui-btn_mini weui-btn_plain-default" style="width: 30%;"  target="_top">安卓应用</a> 
+  <a href="javascript:openPPkBrowser();" class="weui-btn weui-btn_mini weui-btn_plain-default" style="width: 32%;" target="_top">更多应用</a>
+  </p>
+
+  </center>
+ 
+  <p><br></p>
+  <p align="center" class="weui-footer__text">
+  <a href="https://ppk001.sinaapp.com/docs/help_odin/" target="_blank">★ 奥丁号是数字资产和区块链应用的通用名和门牌号，点击了解</a>
+  <br><br>
+  <a href="https://ppk001.sinaapp.com/docs/help_odintool/" target="_blank">★ 如何快捷注册奥丁号和关联多种数字资产钱包地址使用?</a>
+  <br><br>
+  <!--<a href="https://ppk001.sinaapp.com/docs/help_pns/" target="_blank">★ 如何托管奥丁号获得更多功能?</a>
+  <br><br>-->
+  <a href="https://ppk001.sinaapp.com/docs/help_ppkbrowser/" target="_blank">★ 通过PPk安卓应用来管理自己的奥丁号包括转移过户</a>
+  </p>
+  
+  <br>
+  <p align="center" class="weui-msg__desc">
+  本应用来自开放分享，实际使用请遵守当地法律法规。<br>
+  Released under the MIT License.<br>
+  Please abide by local laws and regulations！
+  </p>
+  <br><br>
+
+
+<script src="js/jquery.min.js"></script>
+<script src="js/fastclick.js"></script>
+<script src="js/common_func.js"></script>
+<script src="js/ppk.js"></script>
+
+<script src="js/jquery.qrcode.min.js"></script>
+
+<script>
+  $(function() {
+    FastClick.attach(document.body);
+  });
+</script>
+<script src="https://cdn.bootcss.com/jquery-weui/1.2.1/js/jquery-weui.min.js"></script>
+<script>
+  const HISTORY_KEY="history-appdemo-ppk001-dest";
+  const HISTORY_MAX_SIZE=5;
+  const APPDEMO_MARK = "PPkAppDemo(http://ppk001.sinaapp.com/odin/)";
+  const APP_PAY_PREFIX = "https://ppk001.sinaapp.com/demo/pay/";
+  
+  const IMG_LOADING_SVG = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcgdD0iMTYwODg5NzMwOTI1NCIgY2xhc3M9Imljb24iIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwLWlkPSIyMDM3IiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiPjxwYXRoIGQ9Ik04NDMuMzA3IDc0Mi4yNGMwIDMuMjE3IDIuNjA3IDUuODI0IDUuODI0IDUuODI0czUuODI0LTIuNjA3IDUuODI0LTUuODI0YTUuODIzIDUuODIzIDAgMCAwLTUuODI0LTUuODI0IDUuODIzIDUuODIzIDAgMCAwLTUuODI0IDUuODI0ek03MTQuNzMxIDg3NC45MTJjMCA2LjM5OCA1LjE4NiAxMS41ODQgMTEuNTg0IDExLjU4NHMxMS41ODQtNS4xODYgMTEuNTg0LTExLjU4NC01LjE4Ni0xMS41ODQtMTEuNTg0LTExLjU4NC0xMS41ODQgNS4xODYtMTEuNTg0IDExLjU4NHpNNTQxLjQxOSA5NDMuMmMwIDkuNjE0IDcuNzk0IDE3LjQwOCAxNy40MDggMTcuNDA4czE3LjQwOC03Ljc5NCAxNy40MDgtMTcuNDA4LTcuNzk0LTE3LjQwOC0xNy40MDgtMTcuNDA4LTE3LjQwOCA3Ljc5NC0xNy40MDggMTcuNDA4eiBtLTE4Ni41Ni05LjE1MmMwIDEyLjc5NSAxMC4zNzMgMjMuMTY4IDIzLjE2OCAyMy4xNjhzMjMuMTY4LTEwLjM3MyAyMy4xNjgtMjMuMTY4LTEwLjM3My0yMy4xNjgtMjMuMTY4LTIzLjE2OC0yMy4xNjggMTAuMzczLTIzLjE2OCAyMy4xNjh6TTE4OS4zNTUgODQ5LjEyYzAgMTYuMDEyIDEyLjk4IDI4Ljk5MiAyOC45OTIgMjguOTkyczI4Ljk5Mi0xMi45OCAyOC45OTItMjguOTkyLTEyLjk4LTI4Ljk5Mi0yOC45OTItMjguOTkyLTI4Ljk5MiAxMi45OC0yOC45OTIgMjguOTkyek03NC43MzEgNzA0LjczNmMwIDE5LjIyOCAxNS41ODggMzQuODE2IDM0LjgxNiAzNC44MTZzMzQuODE2LTE1LjU4OCAzNC44MTYtMzQuODE2LTE1LjU4OC0zNC44MTYtMzQuODE2LTM0LjgxNi0zNC44MTYgMTUuNTg4LTM0LjgxNiAzNC44MTZ6IG0tNDMuMDA4LTE3Ny4yOGMwIDIyLjQxIDE4LjE2NiA0MC41NzYgNDAuNTc2IDQwLjU3NnM0MC41NzYtMTguMTY2IDQwLjU3Ni00MC41NzYtMTguMTY2LTQwLjU3Ni00MC41NzYtNDAuNTc2LTQwLjU3NiAxOC4xNjYtNDAuNTc2IDQwLjU3NnogbTM1LjM5Mi0xNzYuMTI4YzAgMjUuNjI2IDIwLjc3NCA0Ni40IDQ2LjQgNDYuNHM0Ni40LTIwLjc3NCA0Ni40LTQ2LjRjMC0yNS42MjYtMjAuNzc0LTQ2LjQtNDYuNC00Ni40LTI1LjYyNiAwLTQ2LjQgMjAuNzc0LTQ2LjQgNDYuNHogbTEwNi4xNzYtMTQyLjAxNmMwIDI4Ljg0MyAyMy4zODEgNTIuMjI0IDUyLjIyNCA1Mi4yMjRzNTIuMjI0LTIzLjM4MSA1Mi4yMjQtNTIuMjI0YzAtMjguODQzLTIzLjM4MS01Mi4yMjQtNTIuMjI0LTUyLjIyNC0yOC44NDMgMC01Mi4yMjQgMjMuMzgxLTUyLjIyNCA1Mi4yMjR6IG0xNTUuOTA0LTgxLjM0NGMwIDMyLjAyNCAyNS45NiA1Ny45ODQgNTcuOTg0IDU3Ljk4NHM1Ny45ODQtMjUuOTYgNTcuOTg0LTU3Ljk4NC0yNS45Ni01Ny45ODQtNTcuOTg0LTU3Ljk4NC01Ny45ODQgMjUuOTYtNTcuOTg0IDU3Ljk4NHogbTE3NS4xMDQtNS4wNTZjMCAzNS4yNCAyOC41NjggNjMuODA4IDYzLjgwOCA2My44MDhzNjMuODA4LTI4LjU2OCA2My44MDgtNjMuODA4YzAtMzUuMjQtMjguNTY4LTYzLjgwOC02My44MDgtNjMuODA4LTM1LjI0IDAtNjMuODA4IDI4LjU2OC02My44MDggNjMuODA4eiBtMTYwLjMyIDcyLjEyOGMwIDM4LjQyMSAzMS4xNDcgNjkuNTY4IDY5LjU2OCA2OS41NjhzNjkuNTY4LTMxLjE0NyA2OS41NjgtNjkuNTY4LTMxLjE0Ny02OS41NjgtNjkuNTY4LTY5LjU2OC02OS41NjggMzEuMTQ3LTY5LjU2OCA2OS41Njh6IG0xMTMuOTIgMTM1LjQ4OGMwIDQxLjYzOCAzMy43NTQgNzUuMzkyIDc1LjM5MiA3NS4zOTJzNzUuMzkyLTMzLjc1NCA3NS4zOTItNzUuMzkyLTMzLjc1NC03NS4zOTItNzUuMzkyLTc1LjM5Mi03NS4zOTIgMzMuNzU0LTc1LjM5MiA3NS4zOTJ6IG00NS4zMTIgMTc1LjQ4OGMwIDQ0Ljg1NCAzNi4zNjIgODEuMjE2IDgxLjIxNiA4MS4yMTZzODEuMjE2LTM2LjM2MiA4MS4yMTYtODEuMjE2YzAtNDQuODU0LTM2LjM2Mi04MS4yMTYtODEuMjE2LTgxLjIxNi00NC44NTQgMC04MS4yMTYgMzYuMzYyLTgxLjIxNiA4MS4yMTZ6IiBmaWxsPSIjMTI5NmRiIiBwLWlkPSIyMDM4Ij48L3BhdGg+PC9zdmc+";
+
+  var mObjWallets;
+  var mCurrentQrCodeText="";
+  var mSelectingAddress=false;
+  var mRefreshAfterCloseAddessList=false;
+  
+  var gStrCurrentODIN="";
+
+  
+ 
+  $(document).ready( function() {
+      var login_confirm_url=getQueryString('login_confirm_url');
+      //alert("login_confirm_url="+login_confirm_url);
+      if(login_confirm_url!=null && login_confirm_url.length>0){//传入有效登录参数不需要再扫码获取的情况
+          promptConfirmLogin(login_confirm_url);
+      }
+      /*
+      var my_odin_uri = getQueryString('me');
+      if(my_odin_uri!=null && my_odin_uri.length>0){
+        my_odin_uri=PPKLIB.formatPPkURI(my_odin_uri,true);
+        if(my_odin_uri!=null){
+            gStrCurrentODIN = my_odin_uri;
+        }
+      }
+      */
+
+      $("#select_dest_odin").select({
+        title: "选择收款人",
+        input:"",
+        items: [{
+                title: "请先输入有效的收款人奥丁号",
+                value: "",
+               }],
+        onOpen: function ( ) {
+          mSelectingAddress = true;
+        },
+        onChange: function(d) {
+          if( typeof(d.values)!='undefined' ){
+              console.log("onChange dest_wallet_address:  ", d.values);
+              if(d.values==""){
+                  inputPaytoODIN();
+              }else{
+                  $("#payto_odin_uri").html( d.values );
+                  refreshPaytoInfo( );  
+              }
+          }
+        },
+        onClose: function (d) {
+          /*if( typeof(d.data.values)!='undefined' ){
+              console.log('selected dest_wallet_address:', d.data.values);
+              document.getElementById("payto_odin_uri").value= d.data.values;
+          }*/
+
+          mSelectingAddress = false;
+
+          //refreshPaytoInfo( );  
+        }
+      });
+      
+      restoreLocalSetting();
+  });
+  
+function openPPkBrowser(){
+  $.alert("正在打开PPk浏览工具...");
+  //location.href="http://ppk001.sinaapp.com/demo/browser/?back=https://ppk001.sinaapp.com/odin/";  
+  location.href="ppk:0/";  
+}
+
+function refreshPaytoInfo( ){
+    mCurrentQrCodeText = "";
+
+    //$("#dest_title").html("");
+    $("#dest_title").html("请输入奥丁号，以生成收款码") ;
+
+    var str_dest = $("#payto_odin_uri").html();
+    if(str_dest.length==0){
+        return;
+    }
+    
+    var dest_odin_uri=PPKLIB.formatPPkURI(str_dest,true);
+    
+    if(dest_odin_uri==null){
+        $("#dest_title").html("请输入有效的奥丁号！") ;
+        return;
+    }
+    
+    $("#payto_odin_uri").val(dest_odin_uri)
+    
+
+    //更新输入历史
+    try{
+        var historyArray = getHistoryDest();
+
+        var exist = historyArray.indexOf(dest_odin_uri);
+        if(exist<0){
+            historyArray.push(dest_odin_uri);
+        }
+        
+        if(historyArray.length>HISTORY_MAX_SIZE){
+            historyArray.splice(1, historyArray.length-HISTORY_MAX_SIZE);
+        }
+
+        saveLocalConfigData(HISTORY_KEY,JSON.stringify(historyArray));
+    } catch (error) {
+        console.error(error);
+    }
+    
+    genQrCode();
+}
+
+function genQrCode(  ){
+    //waitingButton("btn_refreshQrCode");
+    var dest_odin_uri = $("#payto_odin_uri").html();
+    var dest_title = $("#dest_title").html().trim();
+    if( dest_title.trim().length==0 ){
+        dest_title="收款人";
+    }
+
+    //重置二维码
+    clearOldPaytoCode(true);
+    
+    $("#dest_title").html("二维码生成中...")
+    //$("#qrcode_payto").html("二维码生成中...");
+    
+    var use_cache=false;
+    PPKLIB.getPPkData(dest_odin_uri,paytoPPkDataCallback, use_cache);
+
+    //finishedButton("btn_refreshQrCode");
+}
+
+function clearOldPaytoCode(boolShowLoading){
+    if(boolShowLoading){
+        $("#qrCodeIcoPayTo").attr('src',IMG_LOADING_SVG);
+        
+        $('#qrcode_payto').html('<center><img src="./image/title.png"  style="width:auto;height:100px;border-radius:6px;"></center>');
+    }else{
+        if(typeof($('#qrcode_payto')[0].children[0]) != 'undefined'){
+            $('#qrcode_payto')[0].children[0].remove();
+        }
+    }  
+}
+
+function paytoPPkDataCallback(status,result){
+    var bool_get_data_ok = false;
+    var dest_title = "收款人";
+    var dest_avatar = "https://tool.ppkpub.org/image/user.png";
+    if('OK'==status){
+        try{
+            var obj_pttp_data = parseJsonObjFromAjaxResult(result);
+            //document.getElementById("debug_data").value=JSON.stringify(obj_pttp_data);
+            var tmp_content = PPKLIB.getContentFromData(obj_pttp_data);
+            //document.getElementById("debug_data").value=tmp_str;
+            
+            var obj_content = JSON.parse( tmp_content );
+            
+            if(typeof(obj_content) == 'undefined' || obj_content==null){
+                dest_title = "不存在的标识或者解析有误，请重设下试试！";
+            }else if(typeof(obj_content.x_did) != 'undefined' ){
+                var obj_did = obj_content.x_did;
+                if(typeof(obj_did.name) != 'undefined' )
+                    dest_title = obj_did.name;
+                
+                if(typeof(obj_did.avatar) != 'undefined' ){
+                    console.log("obj_did.avatar="+obj_did.avatar);
+                    
+                    dest_avatar = obj_did.avatar;
+                }
+                
+                bool_get_data_ok=true;
+            }
+        }catch(error){
+            console.log("paytoPPkDataCallback() error:"+error);
+            dest_title = "收款人信息有误，请重试！";
+        }
+    }else{
+        dest_title = "获取收款人信息出错了，请重试！";
+    }
+
+    $("#dest_title").html(dest_title);
+    $("#qrCodeIcoPayTo").attr('src',dest_avatar);
+    
+    if(bool_get_data_ok){
+        refreshQrCode();
+        
+        if($("#payto_odin_uri").html()==gStrCurrentODIN){
+            $('#current_avatar').attr("src",dest_avatar);
+            $('#nav_icon_me').attr("src",dest_avatar);
+            $('#current_title').html(dest_title);
+        }
+    }
+}
+
+function refreshQrCode(  ){
+    //waitingButton("btn_refreshQrCode");
+    var dest_odin_uri = $("#payto_odin_uri").html();
+    var dest_title = $("#dest_title").html().trim();
+    if( dest_title.trim().length==0 ){
+        dest_title="收款人";
+    }
+
+    //清除旧二维码
+    clearOldPaytoCode(false);
+    
+    //生成二维码
+    mCurrentQrCodeText = APP_PAY_PREFIX + '?ppkpayto=' + encodeURIComponent(dest_odin_uri) + '&title=' + encodeURIComponent(dest_title)  ;
+
+    $('#qrcode_payto').qrcode({width: 100,height: 100,text: mCurrentQrCodeText});
+    
+    $("#dest_title").html(dest_title);
+    
+}
+
+
+function inputPaytoODIN(){
+  $.prompt({
+      title: '换一个收款奥丁号',
+      text: '请输入数字或英文名称的奥丁号',
+      input: "",
+      empty: false, // 是否允许为空
+      
+      onOK: function (input) {
+        var dest_odin_uri=PPKLIB.formatPPkURI(input.trim(),true);
+        if( dest_odin_uri.startsWith("ppk:")){
+            $("#payto_odin_uri").html(dest_odin_uri);
+            refreshPaytoInfo();
+            return true;
+        }else{
+            alert("请输入正确的奥丁号");
+            return false;
+        }
+      },
+      onCancel: function () {
+        //点击取消
+      }
+    });   
+}
+
+function inputPaytoTitle(){
+  var dest_odin_uri = $("#payto_odin_uri").html();
+  if( dest_odin_uri.trim().length==0 ){
+      //尚未设置有效奥丁号
+      inputPaytoODIN(); 
+  }else{
+      $.prompt({
+          title: '修改显示的收款人名称',
+          text: '请输入临时名称，方便截图和分享',
+          input: $("#dest_title").html(),
+          empty: false, // 是否允许为空
+          onOK: function (input) {
+            $("#dest_title").html(input.trim());
+            refreshQrCode();
+            return true;
+          },
+          onCancel: function () {
+            //点击取消
+          }
+        });   
+  }
+}
+
+function selectHistoryODIN(){
+    if(mSelectingAddress){
+       $("#select_dest_odin").select("close");
+       return false;   
+    }
+
+    var tmp_address_array = [];
+    
+    tmp_address_array[0]={
+                    title:'输入新的收款奥丁号',
+                    value:""
+                };
+                
+    if( gStrCurrentODIN!=null && gStrCurrentODIN.length>0 ) {
+        tmp_address_array[1]={
+                    title:'我( ' + gStrCurrentODIN +' )',
+                    value:gStrCurrentODIN
+                };
+    }
+    
+    var historyArray=getHistoryDest();
+    
+    for(kk=historyArray.length-1;kk>=0;kk--){
+        var tmp_odin = historyArray[kk];
+        
+        if( tmp_odin != gStrCurrentODIN ) {
+            tmp_address_array[tmp_address_array.length]={
+                    title:tmp_odin,
+                    value:tmp_odin
+                };
+        }
+        
+        
+    }
+    
+    $("#select_dest_odin")
+        .select(
+            "update", 
+            {
+                input:"点击选择奥丁号生成收款二维码",
+                items: tmp_address_array 
+            }
+        );
+    
+    $("#select_dest_odin").select("open");
+}
+
+function testQrCode(){
+    if(mCurrentQrCodeText.length>0){
+        $("#btn_testQrCode").html("正在打开...");
+        location.href = mCurrentQrCodeText;
+    }else
+        commonAlert("请先输入有效的收款人奥丁号");
+}
+
+function shareQrCode(){
+    if(mCurrentQrCodeText.length>0){
+        $("#btn_shareQrCode").html("正在生成...");
+        location.href =  "paycode_share.html?ppkpayto="+ encodeURIComponent($("#payto_odin_uri").html()) + "&title=" + encodeURIComponent($("#dest_title").html())+ "&avatar=" + encodeURIComponent($("#qrCodeIcoPayTo").attr("src"));
+        //location.href = APP_PAY_PREFIX + "qr/?ppkpayto="+ encodeURIComponent($("#payto_odin_uri").html()) + "&title=" + encodeURIComponent($("#dest_title").html())+ "&avatar=" + encodeURIComponent('https://tool.ppkpub.org/image/user.png');
+    }else
+        commonAlert("请先输入有效的收款人奥丁号");
+}
+
+function gotoSetting(){
+    location.href="about:settings"; 
+}
+
+/*
+function generateQrCodeImg(str_qr_code){
+    var typeNumber = 0;
+    var errorCorrectionLevel = 'H';
+    var qr = qrcode(typeNumber, errorCorrectionLevel);
+    qr.addData(str_qr_code);
+    qr.make();
+    document.getElementById('qrcode_payto').innerHTML = qr.createImgTag();
+}
+*/
+
+function meAsDest(){
+    $("#payto_odin_uri").html( gStrCurrentODIN );
+    refreshPaytoInfo( );
+}
+
+
+function useHistoryDest(str_old_odin){
+    document.getElementById('history_odins_area').style.display="none";
+    $("#payto_odin_uri").html( str_old_odin );
+    refreshPaytoInfo(false);
+}
+
+function getHistoryDest( ){
+    try {
+        var historyStr=getLocalConfigData(HISTORY_KEY);
+        //myAlert(historyStr);
+        if(historyStr==null){
+            return new Array();
+        }else{
+            return JSON.parse(historyStr);
+        }
+    } catch (error) {
+      console.error(error);
+      return new Array();
+    }
+}
+
+  
+  
+ 
+  
+  function gotoURL(url,message){
+    if( typeof( message ) != undefined )
+        $.alert(message);
+    else
+        $.alert("正跳转到 "+ url);
+    
+    window.location.href=url;
+  }
+  
+  function fastLoginPNS(){
+    gotoURL('https://ppk001.sinaapp.com/ap2/login.php?backpage=pns_set_localdb',"正在打开奥丁号托管解析工具(PNS)");
+  }
+  
+  function restoreLocalSetting(){ 
+    //读取PPk浏览器内置钱包中缺省用户身份标识
+    PeerWeb.getDefaultODIN(
+        'callback_setNewODIN'  
+    );
+  }
+  
+  function callback_setNewODIN(status,obj_data){
+    if('OK'==status){
+        if(obj_data.odin_uri!=null && obj_data.odin_uri.trim().length>0){
+            gStrCurrentODIN=obj_data.odin_uri.trim();
+            meAsDest( );
+        }
+    }
+  }
+  
+</script>
+</body>
+</html>

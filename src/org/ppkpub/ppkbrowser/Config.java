@@ -31,6 +31,7 @@ public class Config {
   public static String ppkSettingPageFileURI = "file:///android_asset/settings.html";
   public static String ppkPayPage        = "about:pay";
   public static String ppkPayPageFileURI = "file:///android_asset/paycode.html";
+  public static String ppkPaySharePageFileURI = "file:///android_asset/paycode_share.html";
   
   public static String ppkHotURI  = "ppk:joy/";
   public static String ppkDefaultHomepage  = ppkPayPage;
@@ -47,6 +48,9 @@ public class Config {
   public static String versionUpdateURL = "http://ppkpub.org/PPkBrowserAndroid/bin/version.json";
   
   public static String developeVersion  = "" ; //空字符串时表示为正式版本，开发版本取值注意加上:字符，如:01
+  /*开发版本修改记录
+   *  
+   */
   public static String developeVersionUpdateURL   = "http://47.114.169.156/autoupdate/ppkbrowser/version_test.json";
   //public static String developeVersionUpdateURL   = "http://192.168.62.99/autoupdate/ppkbrowser/version_local.json";
 

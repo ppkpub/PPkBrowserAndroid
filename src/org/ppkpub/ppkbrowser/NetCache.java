@@ -32,6 +32,11 @@ public class NetCache {
 	  }
   }
   
+  //获取缓存路径
+  public static String  getNetCachePath(   ) {
+  	return mNetCacheDirPrefix;
+  }
+  
   //写入缓存，待完善
   //改用org.apache.commons.io.FileUtils
   public static boolean saveNetCache( String uri, String data  )

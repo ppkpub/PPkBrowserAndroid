@@ -1,0 +1,165 @@
+<!doctype html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="renderer" content="webkit">
+<title>用奥丁号收款真方便！上手体验区块链应用...</title>
+<meta content="ppkpub.org" name="author" />
+<meta content="用奥丁号转账，轻松关联比特币、以太坊、比原等多个币种，以及支付宝、微信等钱包地址" name="description" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge, chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+<style type="text/css">
+html,body{background-color: #e77817;height: 100%;width: 100%;margin:0;padding:0;}
+</style>
+<body  >
+<img id="bg_img" src='bg720.png' style='z-index=-1;-webkit-transform: translateZ(-1px);' width="100%" height="100%">
+
+<div id="qrcode_img" >请提供奥丁号<br>以生成收款码</div>
+<div id="payee_area"><center><font color="#fff"><span id="scan_title" style="display: inline-block;font-size:12px;font-family: arial;line-height:0.5;"></span><br><span id="scan_address" style="display: inline-block;font-size:12px;font-family: arial;line-height:0.5;"></span></font></center></div>
+</body>
+
+<script src="https://cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+
+<script src="https://ppk001.sinaapp.com/ppk-lib2/js/0.1.1/common_func.js"></script>
+<!--<script src="https://ppk001.sinaapp.com/ppk-lib2/js/0.1.1/ppk.js"></script>-->
+
+<script src="https://ppk001.sinaapp.com/ppk-lib2/js/common/jquery.qrcode.min.js"></script>
+
+<script>
+const QRCODE_PREFIX = "https://ppk001.sinaapp.com/demo/pay/";
+//const QRCODE_PREFIX = "http://pay.ppkpub.org/";
+var   AVATAR_WIDTH=16;
+var   QRCODE_WIDTH=200;
+var   QRCODE_LEFT=0;
+var   QRCODE_TOP=0;
+
+var   WINDOW_WIDTH;
+var   WINDOW_HEIGHT;
+
+$(document).ready( function() {
+  WINDOW_WIDTH= window.innerWidth;
+  WINDOW_HEIGHT= window.innerHeight;
+  
+  var bg_img =  $("#bg_img");
+  bg_img.css("width",WINDOW_WIDTH);
+  bg_img.css("height",WINDOW_HEIGHT);
+
+  //计算二维码位置
+  var bg_qr_width = Math.floor(250*WINDOW_WIDTH/720)-2;
+  var bg_qr_height = Math.floor(250*WINDOW_HEIGHT/1520)-2;
+  console.log("bg_qr_width:"+bg_qr_width+"  bg_qr_height:"+bg_qr_height);
+    
+  QRCODE_WIDTH = Math.min( Math.min(bg_qr_width,128), Math.min(bg_qr_height,128) );   
+  console.log("QRCODE_WIDTH:"+QRCODE_WIDTH);
+    
+  QRCODE_LEFT = Math.floor(365*WINDOW_WIDTH/720 - QRCODE_WIDTH/2 );
+  QRCODE_TOP = Math.floor(933*WINDOW_HEIGHT/1520 - QRCODE_WIDTH/2 );
+  
+  //控制头像图标的尺寸位置
+  AVATAR_WIDTH = QRCODE_WIDTH>81 ? 32 : 16 ;
+  
+  var left = QRCODE_LEFT + QRCODE_WIDTH/2 - AVATAR_WIDTH/2;
+  var top = QRCODE_TOP+ QRCODE_WIDTH/2 - AVATAR_WIDTH/2-2;
+  $("#payee_area").before('<img id="avatar_img" style="vertical-align:middle;position:absolute;z-index:999;width:'+AVATAR_WIDTH+'px;height:'+AVATAR_WIDTH+'px;left:'+left+'px;top:'+top+'px;border-radius:6px;background-color: #fff;background-blend-mode: multiply;" src="https://tool.ppkpub.org/image/user.png" alt="">');
+      
+  refreshDestQrCode();
+    
+});
+
+
+function refreshDestQrCode( ){
+    var dest_odin_uri = getQueryString('ppkpayto');
+    if(dest_odin_uri==null || dest_odin_uri.length==0){
+        //document.getElementById('qrcode_img').innerHTML ="<span>请提供有效的奥丁号！</span>";
+        location.href="about:pay";
+        return;
+    }
+    
+    var dest_odin_avatar = getQueryString('avatar');
+    if(dest_odin_avatar!=null && dest_odin_avatar.length>0){
+        document.getElementById('avatar_img').src =dest_odin_avatar;
+    }
+    
+
+    /*dest_odin_uri=PPKLIB.formatPPkURI(dest_odin_uri,true);
+    
+    if(dest_odin_uri==null){
+        document.getElementById('qrcode_img').innerHTML ="请提供有效的奥丁号！";
+        return;
+    }
+    */
+    
+    var dest_title = getQueryString('title');
+    if(dest_title==null || dest_title.length==0){
+        dest_title = "收款人";
+    }
+    
+    
+    document.getElementById("scan_address").innerHTML = '( '+getSafeEchoText( dest_odin_uri )+' )';
+    document.getElementById("scan_title").innerHTML = getSafeEchoText( dest_title );
+    document.getElementById('qrcode_img').innerHTML ="<span>二维码生成中...</span>";
+    
+    //调整收款人显示位置
+    var payee_area =  $("#payee_area");
+    
+    var scan_title = document.getElementById("scan_title");
+    var scan_address = document.getElementById("scan_address");
+     
+    var title_width = window.getComputedStyle(scan_title).width;
+    var address_width = window.getComputedStyle(scan_address).width;
+    
+    title_width = title_width.substr(0,title_width.length-2);
+    address_width = address_width.substr(0,address_width.length-2);
+    
+    console.log("title_width="+title_width);
+    console.log("address_width="+address_width);
+    
+    var max_text_width = Math.max(title_width,address_width);
+
+    payee_area.css("position","absolute");
+    payee_area.css("left",Math.floor(366*WINDOW_WIDTH/720 - max_text_width/2 )+"px");
+    payee_area.css("top",Math.floor(1076*WINDOW_HEIGHT/1520 -10)+"px"); 
+    
+
+    //调整二维码位置
+    var qrcode_img =  $("#qrcode_img");
+    qrcode_img.css("position","absolute");
+    qrcode_img.css("left",QRCODE_LEFT+"px");
+    qrcode_img.css("top", QRCODE_TOP+"px"); 
+    
+    //生成二维码
+    var mCurrentQrCodeText = QRCODE_PREFIX + "?ppkpayto=" + encodeURIComponent(dest_odin_uri) ;
+    
+    var str_debug = getQueryString('debug');
+    if(str_debug!=null && str_debug.length>0){
+        mCurrentQrCodeText += '&debug='+encodeURIComponent(str_debug);
+    }
+    
+    console.log("mCurrentQrCodeText: "+mCurrentQrCodeText);
+    generateQrCodeImg( mCurrentQrCodeText , QRCODE_WIDTH);
+    
+    
+}
+
+
+function shareQrCode(){
+    if(mCurrentQrCodeText.length>0)
+        bSync.share(event, 'bsharesync', {url:mCurrentQrCodeText, title:'用奥丁号转账', summary:'用奥丁号转账，轻松关联比特币、以太坊、比原等多个币种钱包地址。'});
+    else
+        commonAlert("请先输入有效的收款人奥丁号");
+}
+
+
+
+function generateQrCodeImg(str_qr_code , QRCODE_WIDTH){
+    if(typeof($('#qrcode_img')[0].children[0]) != 'undefined'){
+        $('#qrcode_img')[0].children[0].remove();
+    }
+    $('#qrcode_img').qrcode({width: QRCODE_WIDTH,height: QRCODE_WIDTH,correctLevel:2,text: str_qr_code});
+}
+
+</script>
+
+</html>
